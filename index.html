@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>みんなのデータラボ 使い方マニュアル — 中学校技術科</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* ================================================
+       TOKENS
+    ================================================ */
+    :root {
+      --blue:        #4f80ff;
+      --blue-dark:   #3a6aee;
+      --blue-pale:   #eef2ff;
+      --indigo:      #6366f1;
+      --purple:      #8b5cf6;
+      --teal:        #14b8a6;
+      --teal-pale:   #e6faf8;
+      --amber:       #f59e0b;
+      --amber-pale:  #fffbeb;
+      --rose:        #f43f5e;
+      --rose-pale:   #fff1f3;
+      --green:       #22c55e;
+      --green-pale:  #f0fdf4;
+      --gray-50:     #f9fafb;
+      --gray-100:    #f3f4f6;
+      --gray-200:    #e5e7eb;
+      --gray-300:    #d1d5db;
+      --gray-400:    #9ca3af;
+      --gray-600:    #4b5563;
+      --gray-700:    #374151;
+      --gray-900:    #111827;
+      --white:       #ffffff;
+      --text:        #1a202c;
+      --text-muted:  #64748b;
+      --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md:   0 4px 16px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04);
+      --shadow-lg:   0 12px 40px rgba(0,0,0,0.09), 0 4px 12px rgba(0,0,0,0.05);
+      --radius-sm:   8px;
+      --radius:      14px;
+      --radius-lg:   20px;
+      --jp:          'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+      --ui:          'Inter', sans-serif;
+    }
+
+    /* ================================================
+       BASE
+    ================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--jp);
+      color: var(--text);
+      background: #f0f4ff;
+      font-size: 15px;
+      line-height: 1.85;
+    }
+
+    /* ================================================
+       PROGRESS BAR
+    ================================================ */
+    #prog {
+      position: fixed; top: 0; left: 0;
+      height: 3px; width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--purple), var(--teal));
+      z-index: 9999;
+      border-radius: 0 3px 3px 0;
+      transition: width 0.08s linear;
+    }
+
+    /* ================================================
+       TOP NAV BAR
+    ================================================ */
+    .topnav {
+      position: sticky; top: 0;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--gray-200);
+      z-index: 100;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .topnav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 15px; color: var(--text);
+      font-family: var(--jp);
+    }
+    .topnav-favicon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      object-fit: contain;
+      display: none; /* faviconがあれば表示 */
+    }
+    .topnav-favicon.loaded { display: block; }
+    .topnav-links {
+      display: flex; gap: 4px;
+      list-style: none;
+    }
+    .topnav-links a {
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .topnav-links a:hover { background: var(--blue-pale); color: var(--blue-dark); }
+    @media (max-width: 640px) { .topnav-links { display: none; } }
+
+    /* ================================================
+       HERO — TOP IMAGE PLACEHOLDER
+    ================================================ */
+    .hero-img-wrap {
+      width: 100%;
+      background: linear-gradient(160deg, #dbe8ff 0%, #e8e4ff 50%, #ddf5f0 100%);
+      line-height: 0;
+    }
+    .hero-img-wrap img {
+      width: 100%; height: auto; display: block;
+    }
+    /* Show placeholder only when img/hero_top.png is missing */
+    .hero-img-wrap .hero-placeholder {
+      text-align: center; padding: 60px 20px;
+    }
+    .hero-img-wrap .hero-placeholder .ph-icon { font-size: 48px; opacity: 0.4; }
+    .hero-img-wrap .hero-placeholder .ph-label { font-size: 14px; color: #8ba4d4; margin-top: 8px; }
+    .hero-img-wrap .hero-placeholder .ph-file { font-size: 11px; font-family: monospace; color: #a5b4cc; margin-top: 4px; }
+
+    /* ================================================
+       PAGE WRAPPER
+    ================================================ */
+    .page { max-width: 820px; margin: 0 auto; padding: 0 20px 80px; }
+
+    /* ================================================
+       TOC CARD
+    ================================================ */
+    .toc-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-md);
+      padding: 40px 48px;
+      margin: 40px 0 32px;
+    }
+    .toc-card .toc-title {
+      font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--blue); font-family: var(--ui);
+      margin-bottom: 20px;
+    }
+    .toc-list { list-style: none; padding: 0; }
+    .toc-list li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .toc-list li:last-child { border-bottom: none; }
+    .toc-num {
+      font-family: var(--ui); font-size: 11px; font-weight: 700;
+      color: var(--blue); padding-top: 3px;
+    }
+    .toc-list a {
+      font-weight: 600; font-size: 14.5px; color: var(--text);
+      text-decoration: none; transition: color 0.15s;
+    }
+    .toc-list a:hover { color: var(--blue); }
+    .toc-sub {
+      display: block; font-size: 12px; font-weight: 400;
+      color: var(--gray-400); margin-top: 2px;
+    }
+
+    /* ================================================
+       SECTION CARD
+    ================================================ */
+    .sc {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-md);
+      padding: 48px 52px;
+      margin-bottom: 24px;
+      scroll-margin-top: 72px;
+    }
+    @media (max-width: 600px) {
+      .sc { padding: 28px 22px; }
+      .toc-card { padding: 28px 22px; }
+    }
+
+    /* Section header */
+    .sc-header {
+      display: flex; align-items: flex-start; gap: 18px;
+      margin-bottom: 28px;
+    }
+    .sc-num {
+      width: 48px; height: 48px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--indigo));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ui); font-size: 20px; font-weight: 800;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(79,128,255,0.35);
+    }
+    .sc-title-wrap { flex: 1; padding-top: 4px; }
+    .sc-title-wrap h2 {
+      font-size: 22px; font-weight: 900; color: var(--text);
+      line-height: 1.3;
+    }
+    .sc-underline {
+      height: 3px; width: 48px; margin-top: 8px;
+      background: linear-gradient(90deg, var(--blue), var(--indigo), var(--purple));
+      border-radius: 2px;
+    }
+
+    /* h3 */
+    .sc h3 {
+      font-size: 16px; font-weight: 800;
+      color: var(--text);
+      margin: 32px 0 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .tag {
+      display: inline-block;
+      font-family: var(--ui); font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      background: var(--blue-pale); color: var(--blue-dark);
+      border-radius: 6px; padding: 3px 8px;
+      flex-shrink: 0;
+    }
+    .tag.teal  { background: var(--teal-pale);  color: #0d9488; }
+    .tag.amber { background: var(--amber-pale);  color: #b45309; }
+    .tag.rose  { background: var(--rose-pale);   color: #e11d48; }
+    .tag.green { background: var(--green-pale);  color: #15803d; }
+
+    /* h4 */
+    .sc h4 {
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--gray-400);
+      font-family: var(--ui);
+      margin: 24px 0 10px;
+    }
+
+    p { color: var(--text-muted); margin-bottom: 14px; }
+    ul, ol { padding-left: 22px; color: var(--text-muted); margin-bottom: 14px; }
+    li { margin: 5px 0; }
+    strong { color: var(--text); font-weight: 700; }
+    code {
+      font-family: 'Menlo', 'Consolas', monospace; font-size: 12.5px;
+      background: var(--gray-100); border-radius: 5px;
+      padding: 1px 6px; color: var(--indigo);
+    }
+
+    /* ================================================
+       FEATURE GRID
+    ================================================ */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .feat-card {
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      background: var(--white);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .feat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 12px;
+    }
+    .feat-icon.blue   { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+    .feat-icon.violet { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
+    .feat-icon.teal   { background: linear-gradient(135deg, #ccfbf1, #99f6e4); }
+    .feat-icon.amber  { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+    .feat-icon.rose   { background: linear-gradient(135deg, #ffe4e6, #fecdd3); }
+    .feat-icon.green  { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
+    .feat-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .feat-desc  { font-size: 13px; color: var(--text-muted); line-height: 1.65; }
+
+    /* ================================================
+       FLOW DIAGRAM (horizontal)
+    ================================================ */
+    .flow-h {
+      display: flex; align-items: center;
+      flex-wrap: wrap; gap: 0;
+      margin: 24px 0;
+      justify-content: flex-start;
+    }
+    .flow-pill {
+      background: linear-gradient(135deg, var(--blue-pale), #e0e8ff);
+      border: 1.5px solid #c7d5ff;
+      border-radius: 50px;
+      padding: 10px 18px;
+      font-size: 12.5px; font-weight: 700; color: var(--blue-dark);
+      text-align: center; line-height: 1.4;
+      white-space: nowrap;
+    }
+    .flow-pill small { display: block; font-size: 10px; font-weight: 400; opacity: 0.75; }
+    .flow-arr {
+      width: 28px; height: 2px;
+      background: linear-gradient(90deg, var(--blue), var(--indigo));
+      position: relative; flex-shrink: 0;
+    }
+    .flow-arr::after {
+      content: '';
+      position: absolute; right: -1px; top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-left-color: var(--indigo);
+    }
+    @media (max-width: 600px) {
+      .flow-h { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .flow-arr { width: 2px; height: 20px; background: linear-gradient(180deg, var(--blue), var(--indigo)); }
+      .flow-arr::after { right: auto; top: auto; bottom: -1px; left: 50%; transform: translateX(-50%);
+        border: 5px solid transparent; border-top-color: var(--indigo); border-left-color: transparent; }
+    }
+
+    /* ================================================
+       VERTICAL FLOW (alert section)
+    ================================================ */
+    .flow-v { margin: 24px 0; }
+    .flow-v-row {
+      display: grid; grid-template-columns: 180px 1fr;
+      gap: 16px; align-items: start; margin-bottom: 0;
+    }
+    .flow-v-left { display: flex; flex-direction: column; align-items: center; }
+    .flow-v-pill {
+      background: linear-gradient(135deg, var(--blue), var(--indigo));
+      color: #fff; border-radius: 50px;
+      padding: 9px 20px; font-size: 12.5px; font-weight: 700;
+      text-align: center; width: 100%;
+      box-shadow: 0 3px 10px rgba(79,128,255,0.3);
+    }
+    .flow-v-line {
+      width: 2px; flex: 1; min-height: 32px;
+      background: linear-gradient(180deg, var(--blue), var(--indigo));
+      margin: 4px 0; opacity: 0.35;
+    }
+    .flow-v-desc {
+      font-size: 13.5px; color: var(--text-muted);
+      padding-top: 10px; line-height: 1.65;
+    }
+    @media (max-width: 540px) {
+      .flow-v-row { grid-template-columns: 1fr; }
+      .flow-v-left { align-items: flex-start; }
+      .flow-v-line { display: none; }
+    }
+
+    /* ================================================
+       STEPS — timeline
+    ================================================ */
+    .steps { list-style: none; padding: 0; margin: 16px 0; position: relative; }
+    .steps::before {
+      content: '';
+      position: absolute; left: 19px; top: 8px;
+      width: 2px; bottom: 8px;
+      background: linear-gradient(180deg, var(--blue) 0%, var(--indigo) 60%, transparent 100%);
+      opacity: 0.2;
+      border-radius: 2px;
+    }
+    .steps li {
+      display: flex; gap: 18px;
+      margin-bottom: 22px;
+      align-items: flex-start;
+      position: relative;
+    }
+    .step-num {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--indigo));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ui); font-size: 14px; font-weight: 800;
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(79,128,255,0.3);
+      position: relative; z-index: 1;
+    }
+    .step-body { flex: 1; padding-top: 6px; }
+    .step-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .step-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.7; }
+
+    /* ================================================
+       TABLE
+    ================================================ */
+    .table-wrap {
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      margin: 16px 0;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead tr { background: linear-gradient(135deg, var(--blue), var(--indigo)); }
+    th {
+      color: #fff; font-weight: 700; padding: 12px 16px;
+      text-align: left; font-size: 13px;
+    }
+    td { padding: 11px 16px; border-bottom: 1px solid var(--gray-100); color: var(--text-muted); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: var(--gray-50); }
+    .cell-tag {
+      font-family: monospace; font-size: 12px;
+      background: #1e1b4b; color: #a5b4fc;
+      border-radius: 5px; padding: 2px 7px;
+    }
+
+    /* ================================================
+       BADGE
+    ================================================ */
+    .badge {
+      display: inline-block; padding: 3px 12px; border-radius: 50px;
+      font-size: 12px; font-weight: 700; font-family: var(--ui);
+    }
+    .badge-blue   { background: linear-gradient(135deg, var(--blue), var(--indigo)); color: #fff; }
+    .badge-green  { background: linear-gradient(135deg, #22c55e, #16a34a);            color: #fff; }
+    .badge-orange { background: linear-gradient(135deg, var(--amber), #d97706);       color: #fff; }
+    .badge-red    { background: linear-gradient(135deg, var(--rose), #e11d48);        color: #fff; }
+    .badge-gray   { background: var(--gray-200); color: var(--gray-600); }
+
+    /* ================================================
+       CALLOUT
+    ================================================ */
+    .callout {
+      border-radius: var(--radius);
+      padding: 16px 20px 16px 16px;
+      margin: 18px 0;
+      display: flex; gap: 14px; align-items: flex-start;
+      border: 1px solid transparent;
+    }
+    .callout-ico {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .callout-body { flex: 1; }
+    .callout-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+    .callout p, .callout ul { margin: 0; font-size: 13.5px; }
+    .callout ul { padding-left: 18px; }
+    .callout li { margin: 3px 0; }
+
+    .callout.info  { background: #eff6ff; border-color: #bfdbfe; }
+    .callout.info  .callout-ico  { background: #dbeafe; }
+    .callout.info  .callout-title { color: #1d4ed8; }
+    .callout.tip   { background: var(--green-pale); border-color: #bbf7d0; }
+    .callout.tip   .callout-ico  { background: #dcfce7; }
+    .callout.tip   .callout-title { color: #15803d; }
+    .callout.warn  { background: var(--amber-pale); border-color: #fde68a; }
+    .callout.warn  .callout-ico  { background: #fef3c7; }
+    .callout.warn  .callout-title { color: #b45309; }
+    .callout.danger { background: var(--rose-pale); border-color: #fecdd3; }
+    .callout.danger .callout-ico  { background: #ffe4e6; }
+    .callout.danger .callout-title { color: #e11d48; }
+
+    /* ================================================
+       SCREENSHOT MOCK (browser chrome)
+    ================================================ */
+    .mock {
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--gray-200);
+      margin: 22px 0;
+    }
+    .mock-body {
+      background: linear-gradient(160deg, #f0f4ff 0%, #f5f0ff 100%);
+      padding: 40px 24px;
+      text-align: center;
+      min-height: 160px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+    }
+    .mock-body img {
+      width: 100%; display: block;
+    }
+    .mock .ph-icon { font-size: 36px; opacity: 0.35; }
+    .mock .ph-label { font-size: 13px; color: #7c8db5; font-weight: 600; }
+    .mock .ph-file { font-size: 11px; font-family: monospace; color: #a5b4cc; }
+
+    /* ================================================
+       HIGHLIGHT / PROMPT SAMPLE
+    ================================================ */
+    .prompt-box {
+      background: #0f0e2a;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin: 18px 0;
+    }
+    .prompt-box .pb-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #7c6ef5;
+      font-family: var(--ui); margin-bottom: 12px;
+    }
+    .prompt-box pre {
+      font-family: 'Menlo','Consolas',monospace;
+      font-size: 12.5px; color: #c9d1f5;
+      line-height: 1.85; white-space: pre-wrap; word-break: break-all;
+    }
+
+    /* ================================================
+       FOOTER
+    ================================================ */
+    footer {
+      background: linear-gradient(135deg, #1a1a3e, #0f172a);
+      color: rgba(255,255,255,0.45);
+      text-align: center;
+      padding: 48px 24px;
+      font-size: 13px; line-height: 2;
+      margin-top: 40px;
+    }
+    footer strong { color: rgba(255,255,255,0.75); }
+
+    /* ================================================
+       PRINT
+    ================================================ */
+    @media print {
+      .topnav, #prog { display: none; }
+      body { background: white; }
+      .sc, .toc-card { box-shadow: none; page-break-inside: avoid; }
+      .page { max-width: 100%; padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="prog"></div>
+
+<!-- ================================================
+     TOP NAV
+================================================ -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <img class="topnav-favicon" src="img/favicon.png" alt=""
+         onload="this.classList.add('loaded')" onerror="this.style.display='none'">
+    みんなのデータラボ 使い方マニュアル
+  </div>
+  <ul class="topnav-links">
+    <li><a href="#overview">概要</a></li>
+    <li><a href="#setup">初期設定</a></li>
+    <li><a href="#student">生徒</a></li>
+    <li><a href="#teacher">教師</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+</nav>
+
+<!-- ================================================
+     HERO IMAGE (ユーザーが用意)
+================================================ -->
+<div class="hero-img-wrap">
+  <img src="img/hero_top.png" alt="くにプロジェクト ヒーロー画像"
+       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+>
+  <div class="hero-placeholder" style="display:none;">
+    <div class="ph-icon">📷</div>
+    <div class="ph-label">ヒーロー画像を配置してください</div>
+    <div class="ph-file">img/hero_top.png</div>
+  </div>
+</div>
+
+<!-- ================================================
+     PAGE
+================================================ -->
+<div class="page">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-title">目次 / Contents</div>
+    <ol class="toc-list">
+      <li>
+        <span class="toc-num">01</span>
+        <div>
+          <a href="#overview">このシステムでできること</a>
+          <span class="toc-sub">特徴一覧・授業の流れ</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">02</span>
+        <div>
+          <a href="#setup">初期設定（教師向け）</a>
+          <span class="toc-sub">スプレッドシート準備 / GASデプロイ / 生徒登録</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">03</span>
+        <div>
+          <a href="#student">生徒ページの使い方</a>
+          <span class="toc-sub">ログイン / データ入力 / 付箋ボード / AI分析</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">04</span>
+        <div>
+          <a href="#teacher">教師ダッシュボードの使い方</a>
+          <span class="toc-sub">生徒一覧・アラート / 付箋ボード / 設定</span>
+        </div>
+      </li>
+      <li>
+        <span class="toc-num">05</span>
+        <div><a href="#spreadsheet">スプレッドシートの構成</a></div>
+      </li>
+      <li>
+        <span class="toc-num">06</span>
+        <div><a href="#alert">AIアラート機能のしくみ</a></div>
+      </li>
+      <li>
+        <span class="toc-num">07</span>
+        <div><a href="#faq">よくある質問</a></div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- ============================================================
+       1. OVERVIEW
+  ============================================================ -->
+  <div class="sc" id="overview">
+    <div class="sc-header">
+      <div class="sc-num">1</div>
+      <div class="sc-title-wrap">
+        <h2>このシステムでできること</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>このシステムは、<strong>高齢者の運動課題をデータとプログラミングで解決する中学校技術科の授業</strong>をサポートするために作られた Google Apps Script 製のウェブアプリです。生徒・教師が同じ URL で使えます。</p>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon blue">📊</div>
+        <div class="feat-title">データ入力・可視化</div>
+        <div class="feat-desc">生徒が調査したデータをフォームで入力。グラフや数値で即座に確認できます。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon violet">🗒️</div>
+        <div class="feat-title">付箋ボード</div>
+        <div class="feat-desc">個人・班・クラス3つのスペースに付箋を貼り、意見を共有。教師も付箋を貼れます。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon teal">🤖</div>
+        <div class="feat-title">AI分析（個人記録）</div>
+        <div class="feat-desc">生徒がAIに質問した内容を個人シートに記録。授業テーマとの関連を自動チェック。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon rose">🔔</div>
+        <div class="feat-title">AIアラート</div>
+        <div class="feat-desc">授業と無関係な活動をしている生徒を教師にアラート。AIが要配慮かどうか判定。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon amber">👩‍🏫</div>
+        <div class="feat-title">教師ダッシュボード</div>
+        <div class="feat-desc">全生徒の活動状況を一覧表示。アラート・分析・付箋管理を一画面で操作。</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon green">💬</div>
+        <div class="feat-title">コメント機能</div>
+        <div class="feat-desc">他の生徒の付箋にコメントを残せます。クラス全体の思考を深める対話が生まれます。</div>
+      </div>
+    </div>
+
+    <h3><span class="tag">FLOW</span>授業の流れとシステムの対応関係</h3>
+    <div class="flow-h">
+      <div class="flow-pill">①調査・計測</div>
+      <div class="flow-arr"></div>
+      <div class="flow-pill">②データ入力<small>生徒ページ</small></div>
+      <div class="flow-arr"></div>
+      <div class="flow-pill">③考察・付箋<small>付箋ボード</small></div>
+      <div class="flow-arr"></div>
+      <div class="flow-pill">④AI活用<small>AI分析記録</small></div>
+      <div class="flow-arr"></div>
+      <div class="flow-pill">⑤教師確認<small>ダッシュボード</small></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       2. SETUP
+  ============================================================ -->
+  <div class="sc" id="setup">
+    <div class="sc-header">
+      <div class="sc-num">2</div>
+      <div class="sc-title-wrap">
+        <h2>初期設定（教師向け）</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-ico">⚠️</div>
+      <div class="callout-body">
+        <div class="callout-title">最初に一度だけ行う作業です</div>
+        <p>授業開始前に教師が行う設定です。一度設定すれば、以降の授業では不要です。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">STEP 1</span>スプレッドシートの準備</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">配布スプレッドシートをマイドライブにコピーする</div>
+          <div class="step-desc">下のリンクを開くと、必要なシート構成が揃ったスプレッドシートを自分のGoogleドライブにコピーできます。ファイル名は任意で変更してください。</div>
+          <div class="step-desc" style="margin-top:8px;">
+            <a href="https://docs.google.com/spreadsheets/d/1KJrfHOJpRmi9AxNPHCDf3wCKV9wd4Te2gNw-iDz3Uvc/copy"
+               target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#4f80ff,#6366f1);color:#fff;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;">
+              📋 スプレッドシートをコピーする
+            </a>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">「生徒設定」シートに生徒情報を入力する</div>
+          <div class="step-desc">コピーしたスプレッドシートの「生徒設定」シートを開き、生徒の情報を入力します（列構成は下記参照）。</div>
+        </div>
+      </li>
+    </ul>
+
+    <h4>「生徒設定」シートの列構成</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>列</th><th>内容</th><th>例</th></tr></thead>
+        <tbody>
+          <tr><td><span class="cell-tag">A列</span></td><td>名簿番号（数値）</td><td>1, 2, 3 …</td></tr>
+          <tr><td><span class="cell-tag">B列</span></td><td>パスワード</td><td>pass123</td></tr>
+          <tr><td><span class="cell-tag">C列</span></td><td>表示名（生徒氏名）</td><td>田中太郎</td></tr>
+          <tr><td><span class="cell-tag">D列</span></td><td>班番号（数値）</td><td>1, 2, 3 …</td></tr>
+          <tr><td><span class="cell-tag">E列</span></td><td>教師フラグ（教師のみ <code>TRUE</code> にチェック）</td><td>TRUE</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">教師アカウントの登録</div>
+        <p>E列のチェックボックスを <strong>TRUE</strong>（チェック済み）にした行が教師アカウントになります。教師はダッシュボードにアクセスでき、付箋の貼り付け・アラート確認・AI分析が可能です。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">STEP 2</span>Google Apps Script のデプロイ</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">スクリプトエディタを開く</div>
+          <div class="step-desc">コピーしたスプレッドシートのメニューから「拡張機能」→「Apps Script」を開きます。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">スクリプトのプロパティを設定する</div>
+          <div class="step-desc">「プロジェクトの設定」→「スクリプト プロパティ」から以下を登録します。</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>プロパティ名</th><th>値の内容</th></tr></thead>
+        <tbody>
+          <tr><td><span class="cell-tag">AZURE_ENDPOINT</span></td><td>Azure OpenAI のエンドポイント URL</td></tr>
+          <tr><td><span class="cell-tag">AZURE_API_KEY</span></td><td>Azure OpenAI の API キー</td></tr>
+          <tr><td><span class="cell-tag">AZURE_DEPLOYMENT</span></td><td>デプロイメント名（例：gpt-4o）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="steps">
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">ウェブアプリとしてデプロイする</div>
+          <div class="step-desc">「デプロイ」→「新しいデプロイ」→種類「ウェブアプリ」を選択。アクセスできるユーザーを「全員」に設定してデプロイします。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">URL を生徒・教師に共有する</div>
+          <div class="step-desc">デプロイ後に表示される URL が、授業で使う URL です。Classroom や授業配布物で URL を共有してください。</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">デプロイ後は「新しいデプロイ」で更新</div>
+        <p>コードを変更した後は「デプロイを管理」→「新しいデプロイ」で再デプロイするか、既存のデプロイを「バージョンを更新」してください。URL は変わりません。</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       3. STUDENT
+  ============================================================ -->
+  <div class="sc" id="student">
+    <div class="sc-header">
+      <div class="sc-num">3</div>
+      <div class="sc-title-wrap">
+        <h2>生徒ページの使い方</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <h3><span class="tag green">LOGIN</span>ログイン</h3>
+    <p>先生から配布された URL をブラウザで開くと、ログイン画面が表示されます。</p>
+    <ul>
+      <li><strong>名前（表示名）</strong>：名簿にある自分の名前を入力</li>
+      <li><strong>パスワード</strong>：先生から配布されたパスワードを入力</li>
+    </ul>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">ログインに失敗するときは</div>
+        <p>名前を正確に入力してください。スペースや全角・半角の違いでログインできない場合があります。先生に確認しましょう。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag">DATA</span>データ入力・可視化</h3>
+    <p>ログインすると、授業テーマに合わせたデータ入力フォームが表示されます。計測データや調査結果を入力すると、画面にグラフや統計値として可視化されます。</p>
+
+    <div class="mock">
+
+      <div class="mock-body">
+        <img src="img/student_data_input.png" alt="データ入力・可視化画面"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">データ入力フォームと可視化画面</div>
+          <div class="ph-file">img/student_data_input.png</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-ico">👆</div>
+      <div class="callout-body">
+        <div class="callout-title">数値やコメントをクリックすると詳細が見られます</div>
+        <p>可視化画面に表示されている数値・グラフ・コメントなどをクリックすると、モーダルウィンドウが開いて詳細情報を確認できます。入力データの内訳や他の生徒のコメントをその場で確認しながら考察を深めましょう。</p>
+      </div>
+    </div>
+
+    <div class="mock">
+      <div class="mock-body">
+        <img src="img/student_data_modal.png" alt="データ詳細モーダル"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">数値・コメントをクリックした際のモーダル表示</div>
+          <div class="ph-file">img/student_data_modal.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h3><span class="tag teal">BOARD</span>付箋ボード</h3>
+    <p>3種類のスペースに付箋を貼って、意見・気づきを共有できます。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>スペース</th><th>見える範囲</th><th>使い方の例</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-blue">個人</span></td>
+            <td>自分と教師のみ</td>
+            <td>自分の考えや気づきのメモ</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">班</span></td>
+            <td>同じ班全員 + 教師</td>
+            <td>班での話し合いの共有</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-orange">クラス</span></td>
+            <td>クラス全員 + 教師</td>
+            <td>発表・全体共有の場</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mock">
+
+      <div class="mock-body">
+        <img src="img/student_sticky_board.png" alt="付箋ボード"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">付箋ボード（3種類のタブ・付箋が並んだ状態）</div>
+          <div class="ph-file">img/student_sticky_board.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h4>付箋の操作方法</h4>
+    <ul>
+      <li><strong>付箋を貼る</strong>：テキストを入力して「投稿」ボタンを押す</li>
+      <li><strong>移動する</strong>：付箋をドラッグ＆ドロップ（位置は自動保存）</li>
+      <li><strong>コメントする</strong>：他の付箋の「コメント」ボタンを押して入力</li>
+      <li><strong>削除する</strong>：自分の付箋の「削除」ボタンを押す</li>
+    </ul>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">教師の付箋について</div>
+        <p>教師が貼った付箋は「【教師】」の名前で表示されます。授業のヒントやコメントが届くので確認しましょう。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag amber">AI</span>AI分析（授業への活用記録）</h3>
+    <p>授業に関する調べ物や疑問を AI に質問すると、その内容が個人シートに自動記録されます。</p>
+    <ul>
+      <li>質問内容と回答がスプレッドシートの個人シートに蓄積される</li>
+      <li>教師はダッシュボードで「授業テーマと関連しているか」を AI が判定した結果を確認できる</li>
+    </ul>
+
+    <div class="mock">
+
+      <div class="mock-body">
+        <img src="img/student_ai_result.png" alt="AI分析結果"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">AI分析ボタンを押した後の結果表示</div>
+          <div class="ph-file">img/student_ai_result.png</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       4. TEACHER
+  ============================================================ -->
+  <div class="sc" id="teacher">
+    <div class="sc-header">
+      <div class="sc-num">4</div>
+      <div class="sc-title-wrap">
+        <h2>教師ダッシュボードの使い方</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>教師アカウントでログインすると、教師専用ダッシュボードが表示されます。生徒一覧・付箋ボード・AI分析設定の3つのタブで構成されています。</p>
+
+    <h3><span class="tag">TAB 1</span>生徒一覧</h3>
+    <p>全生徒のアラート状態・最終分析日時を一覧で確認できます。</p>
+
+    <div class="mock">
+
+      <div class="mock-body">
+        <img src="img/teacher_student_list.png" alt="生徒一覧"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">生徒一覧タブ（アラートあり・なしの生徒が並んだ状態）</div>
+          <div class="ph-file">img/teacher_student_list.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h4>アラートの表示</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>表示</th><th>意味</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-red">要配慮</span></td><td>AIが授業と無関係な活動や要支援と判定した生徒</td></tr>
+          <tr><td><span class="badge badge-green">問題なし</span></td><td>授業に集中して取り組んでいると判定された生徒</td></tr>
+          <tr><td><span class="badge badge-gray">未分析</span></td><td>まだAI分析が実行されていない生徒</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>「分析して更新」ボタン</h4>
+    <p>このボタンを押すと、全生徒の活動データを AI が一括分析し、アラート判定を更新します。授業中に1〜2回押すことをおすすめします。</p>
+
+    <div class="callout warn">
+      <div class="callout-ico">⚠️</div>
+      <div class="callout-body">
+        <div class="callout-title">分析には数十秒かかります</div>
+        <p>生徒数が多い場合、AI 分析に時間がかかります。ボタンが「分析中…」になっている間はお待ちください。</p>
+      </div>
+    </div>
+
+    <h4>生徒カードをクリックして詳細確認</h4>
+    <p>生徒名をクリックすると、その生徒の詳細情報（付箋内容・コメント・AI分析サマリー）が表示されます。</p>
+
+    <div class="mock">
+
+      <div class="mock-body">
+        <img src="img/teacher_student_detail.png" alt="生徒詳細モーダル"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">生徒詳細モーダル（付箋・コメント・AIやり取りの内容が表示された状態）</div>
+          <div class="ph-file">img/teacher_student_detail.png</div>
+        </div>
+      </div>
+    </div>
+
+    <h3><span class="tag teal">TAB 2</span>ボード（教師付箋）</h3>
+    <p>教師からクラス・班・個人に向けて付箋を貼ることができます。生徒のページにリアルタイムで反映されます。</p>
+    <ul>
+      <li><strong>クラスへ</strong>：全生徒に向けたアドバイスや指示</li>
+      <li><strong>班へ</strong>：班番号を指定して班へのメッセージ</li>
+      <li><strong>個人へ</strong>：特定の生徒だけに見える個別コメント</li>
+    </ul>
+
+    <div class="callout tip">
+      <div class="callout-ico">✅</div>
+      <div class="callout-body">
+        <div class="callout-title">教師の付箋も移動できます</div>
+        <p>貼った付箋はドラッグ＆ドロップで位置を変えられます。整理しながら使いましょう。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag amber">TAB 3</span>設定</h3>
+    <p>AI プロンプトの確認・変更ができます。「プロンプト」シートの内容がここに反映されます。</p>
+
+    <div class="mock">
+
+      <div class="mock-body">
+        <img src="img/teacher_settings.png" alt="設定タブ"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;">
+          <div class="ph-icon">📷</div>
+          <div class="ph-label">設定タブ（プロンプト確認・保存ボタン）</div>
+          <div class="ph-file">img/teacher_settings.png</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       5. SPREADSHEET
+  ============================================================ -->
+  <div class="sc" id="spreadsheet">
+    <div class="sc-header">
+      <div class="sc-num">5</div>
+      <div class="sc-title-wrap">
+        <h2>スプレッドシートの構成</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>システムはすべてのデータを Google スプレッドシートに保存します。各シートの役割を理解しておくと、トラブル対応がしやすくなります。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>シート名</th><th>内容</th><th>操作者</th></tr></thead>
+        <tbody>
+          <tr><td><strong>生徒設定</strong></td><td>生徒の名前・パスワード・班・教師フラグの一覧</td><td>教師が手動編集</td></tr>
+          <tr><td><strong>付箋データ</strong></td><td>全付箋の内容・スペース・投稿者・位置情報</td><td>システム自動</td></tr>
+          <tr><td><strong>コメントデータ</strong></td><td>付箋へのコメント一覧</td><td>システム自動</td></tr>
+          <tr><td><strong>アラートキャッシュ</strong></td><td>AI分析結果のキャッシュ（要配慮/問題なし・分析日時）</td><td>システム自動</td></tr>
+          <tr><td><strong>プロンプト</strong></td><td>AIへの指示文（教師が内容を変更可能）</td><td>システム自動作成・教師編集可</td></tr>
+          <tr><td><strong>ひながた</strong></td><td>個人シートのテンプレート</td><td>教師が事前準備</td></tr>
+          <tr><td><strong>（生徒名）</strong></td><td>各生徒のAI質問記録。生徒ごとに自動作成</td><td>システム自動</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><span class="tag amber">PROMPT</span>「プロンプト」シートのセル一覧</h3>
+    <p>AI への指示は「プロンプト」シートのセルで管理されています。初回設定タブを開いた時点でシステムが自動作成します。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>セル</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><span class="cell-tag">A2</span></td><td>アラート判定プロンプト（付箋・コメント・AIやり取りを3項目で要約させる指示）</td></tr>
+          <tr><td><span class="cell-tag">A5</span></td><td>AI分析用プロンプト（個人分析に使う指示文）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prompt-box">
+      <div class="pb-label">A2 プロンプト記入例 — コピーしてそのままご利用いただけます</div>
+      <pre>あなたは中学校技術科の教師のアシスタントです。
+以下の生徒の授業での活動記録を読み、下記の3項目に分けてそれぞれ回答してください。各項目は改行して見やすく整理してください。
+
+【付箋（個人・班・クラス）】
+どのような意見・考えを書いているか。未記入の場合はその旨を明記。
+
+【コメント】
+他の生徒の付箋へのコメント内容は適切か。未記入の場合はその旨を明記。
+
+【AIとのやり取り】
+授業内容に関係があるか、逸脱した質問はないか。未記入の場合はその旨を明記。
+
+問題がなければ各項目に「学習に集中しています」など肯定的に明記してください。</pre>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       6. ALERT
+  ============================================================ -->
+  <div class="sc" id="alert">
+    <div class="sc-header">
+      <div class="sc-num">6</div>
+      <div class="sc-title-wrap">
+        <h2>AIアラート機能のしくみ</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <p>アラート機能は2段階の AI 処理で動作します。教師が「分析して更新」ボタンを押したときに実行されます。</p>
+
+    <div class="flow-v">
+      <div class="flow-v-row">
+        <div class="flow-v-left">
+          <div class="flow-v-pill">生徒の活動データ収集</div>
+          <div class="flow-v-line"></div>
+        </div>
+        <div class="flow-v-desc">付箋・コメント・AIやり取り（最新2件）・データ入力内容</div>
+      </div>
+      <div class="flow-v-row">
+        <div class="flow-v-left">
+          <div class="flow-v-pill">Step 1：要約</div>
+          <div class="flow-v-line"></div>
+        </div>
+        <div class="flow-v-desc">A2プロンプトで【付箋】【コメント】【AIやり取り】の3項目に整理</div>
+      </div>
+      <div class="flow-v-row">
+        <div class="flow-v-left">
+          <div class="flow-v-pill">Step 2：判定</div>
+          <div class="flow-v-line"></div>
+        </div>
+        <div class="flow-v-desc">要約をもとに「要配慮」or「不要」を判定 → アラートキャッシュに保存</div>
+      </div>
+      <div class="flow-v-row">
+        <div class="flow-v-left">
+          <div class="flow-v-pill">教師ダッシュボード反映</div>
+        </div>
+        <div class="flow-v-desc">生徒一覧にバッジとして表示</div>
+      </div>
+    </div>
+
+    <h3><span class="tag">SCOPE</span>参照される情報の範囲</h3>
+    <ul>
+      <li>個人・班・クラスボードの付箋（全件）</li>
+      <li>コメント（全件）</li>
+      <li>AIとのやり取り（最新2件のみ）</li>
+      <li>データ入力内容</li>
+    </ul>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">「要配慮」はあくまで参考情報です</div>
+        <p>AI の判定は完璧ではありません。アラートが出た生徒を確認する際は、詳細を開いて実際の活動内容を見てください。誤検知もあり得ます。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       7. FAQ
+  ============================================================ -->
+  <div class="sc" id="faq">
+    <div class="sc-header">
+      <div class="sc-num">7</div>
+      <div class="sc-title-wrap">
+        <h2>よくある質問</h2>
+        <div class="sc-underline"></div>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>ログインできません</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>名前は「生徒設定」シートの C 列と完全一致している必要があります（スペース・全角半角）</li>
+          <li>パスワードは B 列の値と一致しているか確認</li>
+          <li>教師アカウントでログインする場合は E 列に「teacher」が入っているか確認</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>「分析して更新」を押しても何も変わらない</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>スクリプトプロパティに Azure OpenAI の情報が正しく設定されているか確認</li>
+          <li>GAS エディタの「実行」で直接エラーが出ないか確認</li>
+          <li>プロンプトシートの A2 が空の場合はデフォルトのプロンプトが使われます（動作上は問題なし）</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>生徒の個人シートが作成されない</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>「ひながた」という名前のシートがスプレッドシートに存在するか確認</li>
+          <li>生徒が AI 分析ボタンを一度も押していない場合は作成されません（押した時点で自動作成）</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>付箋が保存されない・消える</h3>
+    <div class="callout warn">
+      <div class="callout-ico">💡</div>
+      <div class="callout-body">
+        <div class="callout-title">確認事項</div>
+        <ul>
+          <li>「付箋データ」シートが存在するか確認（初回付箋投稿時に自動作成されます）</li>
+          <li>ブラウザの通信が切れていないか確認。オフライン状態では保存できません</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>コードを変更したのに反映されない</h3>
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">再デプロイが必要です</div>
+        <p>GAS のコードを変更した後は「デプロイ」→「デプロイを管理」→「編集（鉛筆アイコン）」→「バージョン：新しいバージョン」で保存してください。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>タブレットやスマートフォンでも使えますか？</h3>
+    <p>基本的な操作はタブレット・スマートフォンでも動作します。ただし付箋のドラッグ＆ドロップはタッチ操作に対応しています。複雑な操作は PC が推奨です。</p>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  <p><strong>みんなのデータラボ</strong></p>
+  <p style="margin-top:12px;font-size:12px;line-height:2;opacity:0.6;">
+    本サービスは教育目的での利用を想定しています。サービスの利用によって生じたいかなる損害についても、開発者は責任を負いません。<br>
+    本マニュアルの内容は予告なく変更される場合があります。掲載情報の二次利用・再配布はご遠慮ください。
+  </p>
+</footer>
+
+<script>
+  // Progress bar
+  const prog = document.getElementById('prog');
+  window.addEventListener('scroll', () => {
+    const s = window.scrollY;
+    const t = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (t > 0 ? s / t * 100 : 0) + '%';
+  }, { passive: true });
+</script>
+</body>
+</html>
