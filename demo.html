@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>調査可視化・意見共有ボード（体験デモ）</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+
+  <!-- Chart.js CDN (v4系) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* =====================================================
+       CSS リセット・共通変数
+    ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:      #1976d2;
+      --primary-dark: #1256a3;
+      --accent:       #ff9800;
+      --bg:           #f5f5f5;
+      --surface:      #ffffff;
+      --border:       #e0e0e0;
+      --text:         #212121;
+      --text-muted:   #757575;
+      --radius:       8px;
+      --shadow:       0 2px 8px rgba(0,0,0,0.12);
+      --shadow-lg:    0 4px 20px rgba(0,0,0,0.18);
+
+      /* 付箋の色定義 */
+      --sticky-yellow: #fff9c4;
+      --sticky-yellow-border: #f9a825;
+      --sticky-blue:   #bbdefb;
+      --sticky-blue-border: #1976d2;
+      --sticky-green:  #c8e6c9;
+      --sticky-green-border: #388e3c;
+      --sticky-pink:   #f8bbd9;
+      --sticky-pink-border: #c2185b;
+      --sticky-orange: #ffe0b2;
+      --sticky-orange-border: #e65100;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      font-size: 15px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 14px;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+    button:active { transform: scale(0.97); }
+
+    input, textarea {
+      font-family: inherit;
+      font-size: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus { border-color: var(--primary); }
+
+    /* =====================================================
+       トースト通知
+    ===================================================== */
+    #toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #323232;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: 14px;
+      z-index: 9999;
+      transition: transform 0.3s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { background: #c62828; }
+
+    /* =====================================================
+       デモバナー
+    ===================================================== */
+    #demoBanner {
+      background: linear-gradient(90deg, #1565c0, #7b1fa2);
+      color: #fff;
+      text-align: center;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    #demoBanner span { opacity: 0.85; }
+
+    /* =====================================================
+       アプリ本体：左右分割レイアウト
+    ===================================================== */
+    #appScreen {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ヘッダー */
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 52px;
+      flex-shrink: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      flex: 1;
+    }
+    #headerUser {
+      font-size: 13px;
+      background: rgba(255,255,255,0.18);
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* メインエリア：左右分割 */
+    #mainArea {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* =====================================================
+       左ペイン：可視化（スクロール可）
+    ===================================================== */
+    #vizPane {
+      width: 48%;
+      min-width: 200px;
+      overflow-y: auto;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 可視化ヘッダーバー */
+    .viz-panehead {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .viz-panehead .pane-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      flex: 1;
+    }
+    .viz-panehead .stats {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    #vizContent { padding: 12px; flex: 1; }
+
+    .viz-header {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .question-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .question-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary);
+    }
+    .question-card .meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* グラフコンテナ */
+    .chart-container {
+      position: relative;
+      height: 220px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* 自由記述一覧 */
+    .text-list {
+      list-style: none;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .text-list li {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .text-list li:last-child { border-bottom: none; }
+    .text-list li .idx {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-right: 6px;
+    }
+
+    /* 選択肢集計テーブル */
+    .choice-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .choice-table tr { border-bottom: 1px solid var(--border); }
+    .choice-table tr:last-child { border-bottom: none; }
+    .choice-table tr.clickable-row { cursor: pointer; }
+    .choice-table tr.clickable-row:hover td { background: #f0f4ff; }
+    .ct-label {
+      padding: 5px 8px 5px 0;
+      white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+    .ct-bar {
+      width: 100%;
+      padding: 5px 6px;
+    }
+    .ct-fill {
+      height: 14px;
+      border-radius: 3px;
+      min-width: 2px;
+      transition: width 0.4s ease;
+    }
+    .ct-count {
+      padding: 5px 0 5px 6px;
+      white-space: nowrap;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* =====================================================
+       リサイザー（左右ペイン間のドラッグハンドル）
+    ===================================================== */
+    #paneResizer {
+      width: 6px;
+      cursor: col-resize;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: background 0.15s;
+      position: relative;
+      z-index: 20;
+    }
+    #paneResizer:hover,
+    #paneResizer.active {
+      background: var(--primary);
+    }
+
+    /* =====================================================
+       右ペイン：付箋（スクロールなし・固定）
+    ===================================================== */
+    #stickyPane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+      min-width: 200px;
+    }
+
+    /* 付箋上部コントロールバー */
+    .sticky-controls {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .pane-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-right: 4px;
+    }
+
+    /* スペース切り替えボタン */
+    .space-btn {
+      padding: 5px 12px;
+      background: var(--bg);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+    }
+    .space-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* 色選択ボタン */
+    .color-picker { display: flex; gap: 4px; align-items: center; margin-left: 4px; }
+    .color-dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .color-dot:hover { transform: scale(1.2); }
+    .color-dot.selected { border-color: #333; transform: scale(1.15); }
+    .color-dot.yellow { background: var(--sticky-yellow); }
+    .color-dot.blue   { background: var(--sticky-blue); }
+    .color-dot.green  { background: var(--sticky-green); }
+    .color-dot.pink   { background: var(--sticky-pink); }
+    .color-dot.orange { background: var(--sticky-orange); }
+
+    #addStickyBtn {
+      background: var(--accent);
+      color: #fff;
+      padding: 5px 12px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    #addStickyBtn:hover { background: #e65100; }
+
+    #refreshStickyBtn {
+      background: var(--primary);
+      color: #fff;
+      padding: 5px 10px;
+      font-size: 12px;
+      margin-left: auto;
+    }
+    #refreshStickyBtn:hover { background: var(--primary-dark); }
+
+    /* ボードキャンバス：右ペイン全体に広がる・スクロールなし */
+    .board-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle, #ccc 1px, transparent 1px) 0 0 / 24px 24px,
+        var(--bg);
+    }
+    #stickyBoard {
+      position: absolute;
+      inset: 0;
+      user-select: none;
+    }
+
+    /* =====================================================
+       付箋カード：テキスト量に合わせて縦に伸びる
+    ===================================================== */
+    .sticky-card {
+      position: absolute;
+      width: 170px;
+      border-radius: 6px;
+      border-bottom: 4px solid;
+      box-shadow: var(--shadow);
+      padding: 8px 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: grab;
+      transition: box-shadow 0.15s;
+      z-index: 10;
+    }
+    .sticky-card:active { cursor: grabbing; box-shadow: var(--shadow-lg); z-index: 50; }
+
+    /* 色ごとのスタイル */
+    .sticky-card.yellow { background: var(--sticky-yellow); border-color: var(--sticky-yellow-border); }
+    .sticky-card.blue   { background: var(--sticky-blue);   border-color: var(--sticky-blue-border); }
+    .sticky-card.green  { background: var(--sticky-green);  border-color: var(--sticky-green-border); }
+    .sticky-card.pink   { background: var(--sticky-pink);   border-color: var(--sticky-pink-border); }
+    .sticky-card.orange { background: var(--sticky-orange); border-color: var(--sticky-orange-border); }
+
+    .sticky-author {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.5);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sticky-text {
+      font-size: 13px;
+      line-height: 1.6;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .sticky-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .sticky-btn {
+      background: rgba(0,0,0,0.1);
+      color: rgba(0,0,0,0.6);
+      padding: 2px 7px;
+      font-size: 11px;
+      border-radius: 12px;
+    }
+    .sticky-btn:hover { background: rgba(0,0,0,0.2); }
+    .sticky-btn.like {
+      background: rgba(255,100,100,0.15);
+      color: #c62828;
+    }
+    .sticky-btn.like:hover { background: rgba(255,100,100,0.3); }
+    .sticky-btn.like.liked-active {
+      background: rgba(255,100,100,0.5);
+      color: #b71c1c;
+      font-weight: 700;
+    }
+
+    /* =====================================================
+       コメントパネル（モーダル）
+    ===================================================== */
+    #commentModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #commentModal.open { display: flex; }
+
+    .comment-panel {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 600px;
+      max-height: 75vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .comment-panel h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #closeCommentBtn {
+      background: var(--bg);
+      color: var(--text-muted);
+      padding: 4px 12px;
+      font-size: 14px;
+    }
+
+    #commentList {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+    .comment-item {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .comment-item:last-child { border-bottom: none; }
+    .comment-item .c-author { font-weight: 700; font-size: 12px; color: var(--primary); }
+    .comment-item .c-time   { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+    .comment-item .c-text   { margin-top: 3px; line-height: 1.5; }
+    .comment-empty { color: var(--text-muted); font-size: 14px; text-align: center; padding: 20px; }
+
+    .comment-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    #newCommentText {
+      flex: 1;
+      padding: 9px 12px;
+      resize: none;
+      height: 60px;
+    }
+    #sendCommentBtn {
+      background: var(--primary);
+      color: #fff;
+      padding: 9px 16px;
+      align-self: flex-end;
+    }
+    #sendCommentBtn:hover { background: var(--primary-dark); }
+
+    /* =====================================================
+       ズームコントロール
+    ===================================================== */
+    .zoom-controls {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      margin-left: 4px;
+    }
+    .zoom-btn {
+      background: var(--bg);
+      color: var(--text);
+      padding: 3px 8px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1.5px solid var(--border);
+    }
+    .zoom-btn:hover { background: var(--border); }
+    .zoom-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 36px;
+      text-align: center;
+    }
+
+    /* =====================================================
+       個人回答セクション
+    ===================================================== */
+    #individualSection {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    #individualSection h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary);
+    }
+    #openAllRespondentsBtn {
+      width: 100%;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: var(--radius);
+    }
+    #openAllRespondentsBtn:hover { background: var(--primary-dark); }
+
+    /* =====================================================
+       全回答者モーダル
+    ===================================================== */
+    #allRespondentsModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 2500;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #allRespondentsModal.open { display: flex; }
+    .all-respondents-panel {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 780px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .all-resp-header {
+      padding: 16px 20px;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .all-resp-header h3 { font-size: 16px; font-weight: 700; }
+    #closeAllRespondentsBtn {
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 20px;
+    }
+    #closeAllRespondentsBtn:hover { background: rgba(255,255,255,0.4); }
+    .all-resp-body {
+      overflow-y: auto;
+      flex: 1;
+      padding: 0;
+    }
+    .all-resp-person {
+      border-bottom: 2px solid var(--border);
+    }
+    .all-resp-person:last-child { border-bottom: none; }
+    .all-resp-person-header {
+      background: #f5f5f5;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .all-resp-qa {
+      padding: 8px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .all-resp-qa:last-child { border-bottom: none; }
+    .all-resp-q { font-weight: 700; color: #1976d2; font-size: 12px; margin-bottom: 2px; }
+    .all-resp-a { color: var(--text); }
+
+    /* =====================================================
+       AI分析セクション（デモでは無効）
+    ===================================================== */
+    #aiAnalysisSection {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    #aiAnalysisSection h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary);
+    }
+    .ai-demo-notice {
+      background: #fff8e1;
+      border: 1.5px solid #ffe082;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #795548;
+      line-height: 1.7;
+    }
+    .ai-demo-notice strong { color: #5d4037; }
+
+    /* =====================================================
+       コメント削除ボタン
+    ===================================================== */
+    .comment-item .c-delete-btn {
+      background: none;
+      color: #c62828;
+      border: none;
+      font-size: 11px;
+      padding: 2px 6px;
+      cursor: pointer;
+      float: right;
+    }
+    .comment-item .c-delete-btn:hover { text-decoration: underline; }
+
+    /* =====================================================
+       回答者一覧モーダル
+    ===================================================== */
+    #respondentModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #respondentModal.open { display: flex; }
+    .respondent-panel {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 620px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .respondent-panel h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    #respondentList {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .respondent-item {
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 0;
+      font-size: 13px;
+    }
+    .respondent-item:last-child { border-bottom: none; }
+    .respondent-item .r-q { font-weight: 700; color: #1976d2; font-size: 12px; }
+    .respondent-item .r-a { margin-top: 2px; }
+
+    /* =====================================================
+       確認モーダル
+    ===================================================== */
+    #confirmModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #confirmModal.open { display: flex; }
+    .confirm-panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px 24px 20px;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .confirm-panel p {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #212121;
+    }
+    .confirm-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    #confirmOkBtn {
+      background: #c62828;
+      color: #fff;
+      padding: 8px 20px;
+      font-weight: 700;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    #confirmCancelBtn {
+      background: #f5f5f5;
+      color: #757575;
+      padding: 8px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* =====================================================
+       レスポンシブ対応
+    ===================================================== */
+    @media (max-width: 480px) {
+      header h2 { font-size: 14px; }
+      #headerUser { display: none; }
+      .sticky-card { width: 140px; }
+      .chart-container { height: 180px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ============================================================
+     アプリ本体（デモ版：ログイン不要）
+============================================================ -->
+<div id="appScreen">
+  <!-- デモバナー -->
+  <div id="demoBanner">
+    🎓 体験デモ — <span>ログイン不要・サンプルデータ使用・データは保存されません・AI分析は本番のみ利用可</span>
+  </div>
+
+  <!-- ヘッダー -->
+  <header>
+    <h2 id="headerTitle">📋 授業ボード</h2>
+    <span id="headerUser">デモユーザー（1班）</span>
+  </header>
+
+  <!-- メインエリア：左=可視化 / 右=付箋 -->
+  <div id="mainArea">
+
+    <!-- ============================================================
+         左ペイン：可視化（スクロール可）
+    ============================================================ -->
+    <div id="vizPane">
+      <div class="viz-panehead">
+        <span class="pane-title">📊 可視化</span>
+        <span class="stats" id="vizStats">読み込み中…</span>
+        <button id="refreshVizBtn" style="background:var(--primary);color:#fff;padding:8px 16px;">🔄</button>
+      </div>
+      <div id="vizContent">
+        <div id="vizEmpty" style="display:none;padding:24px;text-align:center;color:var(--text-muted);">
+          データがありません。
+        </div>
+        <div id="vizCards"></div>
+      </div>
+    </div>
+
+    <!-- リサイザー（左右ドラッグハンドル） -->
+    <div id="paneResizer"></div>
+
+    <!-- ============================================================
+         右ペイン：付箋（スクロールなし・固定）
+    ============================================================ -->
+    <div id="stickyPane">
+      <!-- コントロールバー -->
+      <div class="sticky-controls">
+        <span class="pane-title">🗒 付箋</span>
+        <button class="space-btn active" data-space="personal">個人</button>
+        <button class="space-btn"        data-space="group">班</button>
+        <button class="space-btn"        data-space="class">クラス</button>
+        <div class="color-picker">
+          <div class="color-dot yellow selected" data-color="yellow" title="黄色"></div>
+          <div class="color-dot blue"   data-color="blue"   title="青"></div>
+          <div class="color-dot green"  data-color="green"  title="緑"></div>
+          <div class="color-dot pink"   data-color="pink"   title="ピンク"></div>
+          <div class="color-dot orange" data-color="orange" title="オレンジ"></div>
+        </div>
+        <button id="addStickyBtn">＋ 追加</button>
+        <div class="zoom-controls">
+          <button class="zoom-btn" id="zoomOutBtn">－</button>
+          <span class="zoom-label" id="zoomLabel">100%</span>
+          <button class="zoom-btn" id="zoomInBtn">＋</button>
+          <button class="zoom-btn" id="zoomResetBtn">↺</button>
+        </div>
+        <button id="refreshStickyBtn">🔄</button>
+      </div>
+
+      <!-- 付箋ボード -->
+      <div class="board-wrap" id="boardWrap">
+        <div id="stickyBoard"></div>
+      </div>
+    </div>
+
+  </div><!-- /#mainArea -->
+</div>
+
+<!-- ============================================================
+     コメントパネル（モーダル）
+============================================================ -->
+<div id="commentModal">
+  <div class="comment-panel">
+    <h3>
+      <span>💬 コメント</span>
+      <button id="closeCommentBtn">閉じる</button>
+    </h3>
+    <div id="commentList"></div>
+    <div class="comment-input-row">
+      <textarea id="newCommentText" placeholder="コメントを入力…"></textarea>
+      <button id="sendCommentBtn">送信</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     回答者一覧モーダル
+============================================================ -->
+<div id="respondentModal">
+  <div class="respondent-panel">
+    <h3>
+      <span id="respondentModalTitle"></span>
+      <button id="closeRespondentBtn">閉じる</button>
+    </h3>
+    <div id="respondentList"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     全回答者モーダル
+============================================================ -->
+<div id="allRespondentsModal">
+  <div class="all-respondents-panel">
+    <div class="all-resp-header">
+      <h3>個人回答を見る</h3>
+      <button id="closeAllRespondentsBtn">閉じる</button>
+    </div>
+    <div id="allRespondentsBody" class="all-resp-body"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     確認モーダル
+============================================================ -->
+<div id="confirmModal">
+  <div class="confirm-panel">
+    <p id="confirmMessage"></p>
+    <div class="confirm-btns">
+      <button id="confirmOkBtn">OK</button>
+      <button id="confirmCancelBtn">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     JavaScript
+============================================================ -->
+<script>
+/* =============================================================
+   デモ用サンプルデータ
+============================================================= */
+var DEMO_USER = { displayName: 'デモユーザー', groupNumber: 1, isTeacher: false };
+
+var DEMO_FORM_DATA = {
+  count: 20,
+  lastUpdated: '2024年6月10日 10:30',
+  headers: [
+    'タイムスタンプ',
+    '高齢者の方が「運動が続かない」理由として最も当てはまると思うものはどれですか？',
+    '週に何回、高齢者が運動できる環境を整えることが理想的だと思いますか？',
+    '高齢者の運動継続を助けるために、テクノロジーで解決できると思う課題を教えてください',
+    '高齢者が運動を楽しめるための工夫として、最も効果的だと思うものをすべて選んでください',
+    '今回の調査で気づいたことや、感想を自由に書いてください'
+  ],
+  rows: [
+    ['2024/6/10 9:01', 'やる気が出ない', '3', '運動量を自動で記録してくれる装置があれば続けやすい', '仲間と一緒に行う,目標を設定する', '高齢者の方が運動を諦める理由が分かった気がします。'],
+    ['2024/6/10 9:03', '体力的に不安', '2', 'スマートウォッチで体調をモニタリングできると安心', '声かけや励まし,ゲーム感覚で楽しむ', '健康維持の大切さを改めて感じました。'],
+    ['2024/6/10 9:05', '一人では続かない', '3', '仲間と一緒にできるオンライン運動アプリ', '仲間と一緒に行う,声かけや励まし', '班の話し合いで色々な意見が出て面白かったです。'],
+    ['2024/6/10 9:08', 'やる気が出ない', '1', 'AIが個人に合ったプログラムを提案してくれるといい', 'ゲーム感覚で楽しむ,目標を設定する', '運動のモチベーション管理が難しいと分かりました。'],
+    ['2024/6/10 9:10', '体力的に不安', '3', 'センサーで転倒を検知し家族に知らせるシステム', '声かけや励まし,家族と一緒に行う', '安全面の配慮が大切だと思います。'],
+    ['2024/6/10 9:12', '時間がない', '2', '短時間でできる運動メニューを自動生成する機能', 'ゲーム感覚で楽しむ,目標を設定する', '短時間でも効果的な運動ができる工夫が必要だと感じた。'],
+    ['2024/6/10 9:15', '一人では続かない', '3', 'ビデオ通話で仲間と一緒に運動できるアプリ', '仲間と一緒に行う,声かけや励まし', '孤独感を解消することが運動継続のカギかも。'],
+    ['2024/6/10 9:17', 'やる気が出ない', '2', '達成バッジや称号でやる気を引き出す仕組み', 'ゲーム感覚で楽しむ,目標を設定する', 'ゲーミフィケーションが効果的だと思いました。'],
+    ['2024/6/10 9:20', '体力的に不安', '3', '体力に応じてレベル調整される運動プログラム', '声かけや励まし,仲間と一緒に行う', '個人差に対応できる仕組みが重要だと気づきました。'],
+    ['2024/6/10 9:22', 'やる気が出ない', '2', 'カレンダーに運動記録を残せるアプリ', '目標を設定する,家族と一緒に行う', '記録することで達成感が得られると思います。'],
+    ['2024/6/10 9:25', '時間がない', '3', 'テレビを見ながらできる軽い体操の動画配信', 'ゲーム感覚で楽しむ,仲間と一緒に行う', '生活の中に自然に取り入れられる運動がいいと思う。'],
+    ['2024/6/10 9:27', '一人では続かない', '1', 'コミュニティ型の運動グループ管理アプリ', '仲間と一緒に行う,声かけや励まし', '地域のつながりを活用できるといいなと思った。'],
+    ['2024/6/10 9:30', '体力的に不安', '3', '心拍数を自動で測り適切な運動強度を知らせる機器', '声かけや励まし,目標を設定する', '安全に運動するための情報が必要だと感じました。'],
+    ['2024/6/10 9:32', 'やる気が出ない', '2', '毎日リマインダーを送ってくれるアプリ', 'ゲーム感覚で楽しむ,声かけや励まし', 'やる気を持続させる工夫が大切です。'],
+    ['2024/6/10 9:35', '一人では続かない', '3', 'オンラインでインストラクターに相談できる機能', '声かけや励まし,家族と一緒に行う', '専門家のアドバイスがあると安心して続けられる。'],
+    ['2024/6/10 9:37', 'やる気が出ない', '2', 'SNSで運動結果を友達と共有できる機能', 'ゲーム感覚で楽しむ,仲間と一緒に行う', '競争心がモチベーションになる人もいると思う。'],
+    ['2024/6/10 9:40', '時間がない', '3', '5分でできる運動メニューをAIが提案', '目標を設定する,家族と一緒に行う', '忙しい人でも続けられる工夫が必要だと思った。'],
+    ['2024/6/10 9:42', '体力的に不安', '2', '関節に負担のかかりにくい運動を自動で選んでくれる機能', '声かけや励まし,ゲーム感覚で楽しむ', '体への負担を考えた設計が必要だと感じました。'],
+    ['2024/6/10 9:45', 'やる気が出ない', '3', '音楽に合わせた体操アプリ', '仲間と一緒に行う,ゲーム感覚で楽しむ', '楽しい雰囲気があると続けやすいと思います。'],
+    ['2024/6/10 9:47', '一人では続かない', '3', '近所の人と一緒に運動できるマッチングアプリ', '仲間と一緒に行う,声かけや励まし', '身近な場所で仲間を作れると継続しやすいと思う。']
+  ]
+};
+
+/* デモ用付箋データ（メモリ上のみ） */
+var demoStickies = {
+  personal: [
+    { id: 'demo_p1', text: '高齢者が運動を続けるには仲間が大事だと気づいた', color: 'yellow', author: 'デモユーザー', likes: 2, likedBy: [], x: 30,  y: 30,  space: 'personal', comments: [] },
+    { id: 'demo_p2', text: 'テクノロジーで孤独感を解消できるかも', color: 'blue',   author: 'デモユーザー', likes: 0, likedBy: [], x: 220, y: 50,  space: 'personal', comments: [] },
+    { id: 'demo_p3', text: 'ゲーム感覚にすると続けやすい！', color: 'green',  author: 'デモユーザー', likes: 1, likedBy: [], x: 50,  y: 200, space: 'personal', comments: [] }
+  ],
+  group: [
+    { id: 'demo_g1', text: '班の意見：AIコーチング機能が一番使えそう', color: 'orange', author: '山田 花子', likes: 3, likedBy: [], x: 40,  y: 40,  space: 'group', comments: [{ id: 'c1', author: 'デモユーザー', text: '同意！特に食事管理との連携が良さそう', createdAt: '09:30' }] },
+    { id: 'demo_g2', text: '転倒防止センサーのアイデアが出た', color: 'pink',   author: '佐藤 一郎', likes: 2, likedBy: [], x: 230, y: 60,  space: 'group', comments: [] },
+    { id: 'demo_g3', text: 'コスト面も考えないといけない', color: 'yellow', author: 'デモユーザー', likes: 1, likedBy: [], x: 60,  y: 210, space: 'group', comments: [] }
+  ],
+  class: [
+    { id: 'demo_c1', text: 'クラス全体で一番多かった課題：やる気の維持', color: 'blue',   author: '教師', likes: 5, likedBy: [], x: 30,  y: 30,  space: 'class', comments: [] },
+    { id: 'demo_c2', text: 'テクノロジー活用のアイデアが豊富で素晴らしい！', color: 'green',  author: '教師', likes: 8, likedBy: [], x: 220, y: 50,  space: 'class', comments: [] },
+    { id: 'demo_c3', text: '安全性と使いやすさの両立が大切というまとめ', color: 'orange', author: '田中 先生', likes: 4, likedBy: [], x: 50,  y: 210, space: 'class', comments: [] },
+    { id: 'demo_c4', text: '1班：仲間づくりアプリが最優先課題', color: 'yellow', author: '1班代表', likes: 2, likedBy: [], x: 400, y: 40,  space: 'class', comments: [] },
+    { id: 'demo_c5', text: '2班：センサー技術で転倒防止を解決', color: 'pink',   author: '2班代表', likes: 3, likedBy: [], x: 400, y: 180, space: 'class', comments: [] }
+  ]
+};
+
+var nextDemoId = 100;
+function genDemoId() { return 'demo_new_' + (nextDemoId++); }
+
+/* =============================================================
+   グローバル状態
+============================================================= */
+var currentUser = DEMO_USER;
+var currentSpace = 'personal';
+var selectedColor = 'yellow';
+var currentStickyId = null;
+var chartInstances = {};
+var isDragging = false;
+var zoomLevel = 100;
+
+/* =============================================================
+   ユーティリティ
+============================================================= */
+function showToast(msg, isError) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = isError ? 'error show' : 'show';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function() { el.className = ''; }, 3000);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function showConfirm(message, onOk) {
+  var modal = document.getElementById('confirmModal');
+  document.getElementById('confirmMessage').textContent = message;
+  modal.classList.add('open');
+  var okBtn     = document.getElementById('confirmOkBtn');
+  var cancelBtn = document.getElementById('confirmCancelBtn');
+  function cleanup() {
+    modal.classList.remove('open');
+    okBtn.removeEventListener('click', handleOk);
+    cancelBtn.removeEventListener('click', handleCancel);
+  }
+  function handleOk()     { cleanup(); onOk(); }
+  function handleCancel() { cleanup(); }
+  okBtn.addEventListener('click', handleOk);
+  cancelBtn.addEventListener('click', handleCancel);
+}
+
+function nowStr() {
+  var d = new Date();
+  return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+/* =============================================================
+   初期化
+============================================================= */
+document.addEventListener('DOMContentLoaded', function() {
+  // 可視化データ読み込み
+  loadVizData();
+  loadStickies();
+
+  // モーダル閉じる
+  document.getElementById('closeRespondentBtn').addEventListener('click', function() {
+    document.getElementById('respondentModal').classList.remove('open');
+  });
+  document.getElementById('respondentModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+  document.getElementById('closeAllRespondentsBtn').addEventListener('click', function() {
+    document.getElementById('allRespondentsModal').classList.remove('open');
+  });
+  document.getElementById('allRespondentsModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
+  // リサイザー
+  (function() {
+    var resizer  = document.getElementById('paneResizer');
+    var vizPane  = document.getElementById('vizPane');
+    var mainArea = document.getElementById('mainArea');
+    var isResizing = false;
+    resizer.addEventListener('mousedown', function(e) {
+      isResizing = true;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!isResizing) return;
+      var mainRect = mainArea.getBoundingClientRect();
+      var newWidth = e.clientX - mainRect.left;
+      var maxWidth = mainRect.width - 200 - 6;
+      if (newWidth < 200) newWidth = 200;
+      if (newWidth > maxWidth) newWidth = maxWidth;
+      vizPane.style.width = newWidth + 'px';
+      vizPane.style.flex = 'none';
+    });
+    document.addEventListener('mouseup', function() {
+      if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('active');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+  })();
+
+  // ズームコントロール
+  document.getElementById('zoomInBtn').addEventListener('click', function() {
+    if (zoomLevel < 200) { zoomLevel += 10; applyZoom(); }
+  });
+  document.getElementById('zoomOutBtn').addEventListener('click', function() {
+    if (zoomLevel > 50) { zoomLevel -= 10; applyZoom(); }
+  });
+  document.getElementById('zoomResetBtn').addEventListener('click', function() {
+    zoomLevel = 100; applyZoom();
+  });
+
+  // 更新ボタン
+  document.getElementById('refreshVizBtn').addEventListener('click', loadVizData);
+  document.getElementById('refreshStickyBtn').addEventListener('click', loadStickies);
+});
+
+function applyZoom() {
+  var board = document.getElementById('stickyBoard');
+  var scale = zoomLevel / 100;
+  board.style.transform = 'scale(' + scale + ')';
+  board.style.transformOrigin = 'top left';
+  document.getElementById('zoomLabel').textContent = zoomLevel + '%';
+}
+
+/* =============================================================
+   可視化（サンプルデータを使用）
+============================================================= */
+function loadVizData() {
+  renderVizData(DEMO_FORM_DATA);
+}
+
+var PIE_COLORS = [
+  'rgba(25,118,210,0.7)',  'rgba(56,142,60,0.7)',   'rgba(245,124,0,0.7)',
+  'rgba(194,24,91,0.7)',   'rgba(123,31,162,0.7)',   'rgba(0,151,167,0.7)',
+  'rgba(198,40,40,0.7)',   'rgba(104,159,56,0.7)',   'rgba(239,108,0,0.7)',
+  'rgba(69,39,160,0.7)',   'rgba(0,105,92,0.7)',     'rgba(21,101,192,0.7)',
+  'rgba(130,119,23,0.7)',  'rgba(74,20,140,0.7)',    'rgba(30,136,229,0.7)',
+  'rgba(67,160,71,0.7)',   'rgba(251,140,0,0.7)',    'rgba(216,27,96,0.7)',
+  'rgba(142,36,170,0.7)',  'rgba(0,172,193,0.7)'
+];
+
+function detectColumnType(values) {
+  var nonEmpty = values.filter(function(v) { return v !== '' && v !== null && v !== undefined; });
+  if (nonEmpty.length === 0) return 'text';
+  var numericCount = nonEmpty.filter(function(v) {
+    return !isNaN(Number(String(v).trim())) && String(v).trim() !== '';
+  }).length;
+  if (numericCount / nonEmpty.length >= 0.7) return 'numeric';
+  var multiCount = nonEmpty.filter(function(v) { return /[,，、]/.test(String(v)); }).length;
+  if (multiCount / nonEmpty.length >= 0.2) return 'multi';
+  var unique = {};
+  nonEmpty.forEach(function(v) { unique[String(v).trim()] = true; });
+  var uniqueCount = Object.keys(unique).length;
+  var avgLen = nonEmpty.reduce(function(sum, v) { return sum + String(v).trim().length; }, 0) / nonEmpty.length;
+  if (uniqueCount <= 12 && avgLen <= 30) return 'choice';
+  return 'text';
+}
+
+function renderVizData(data) {
+  var statsEl = document.getElementById('vizStats');
+  var cardsEl = document.getElementById('vizCards');
+  var emptyEl = document.getElementById('vizEmpty');
+
+  statsEl.innerHTML = '回答数: <strong>' + data.count + '件</strong>　最終更新: ' + data.lastUpdated;
+
+  Object.keys(chartInstances).forEach(function(k) {
+    chartInstances[k].destroy();
+    delete chartInstances[k];
+  });
+  cardsEl.innerHTML = '';
+
+  if (!data.rows || data.rows.length === 0) {
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  var headers = data.headers;
+  var rows    = data.rows;
+
+  for (var colIdx = 1; colIdx < headers.length; colIdx++) {
+    var header = headers[colIdx];
+    var values = rows.map(function(row) { return row[colIdx]; });
+    var type   = detectColumnType(values);
+
+    var card = document.createElement('div');
+    card.className = 'question-card';
+
+    if (type === 'numeric') {
+      renderNumericCard(card, header, values, colIdx, rows, headers);
+    } else if (type === 'choice') {
+      renderChoiceCard(card, header, values, colIdx, rows, headers);
+    } else if (type === 'multi') {
+      renderMultiCard(card, header, values, colIdx, rows, headers);
+    } else {
+      renderTextCard(card, header, values, colIdx, rows, headers);
+    }
+
+    cardsEl.appendChild(card);
+  }
+
+  renderIndividualSection(data);
+  renderAiAnalysisSection();
+}
+
+function renderIndividualSection(data) {
+  var cardsEl = document.getElementById('vizCards');
+  var existing = document.getElementById('individualSection');
+  if (existing) existing.remove();
+
+  var section = document.createElement('div');
+  section.id = 'individualSection';
+
+  var sortedRows = data.rows.slice().sort(function(a, b) {
+    return String(a[0]).localeCompare(String(b[0]));
+  });
+
+  section.innerHTML =
+    '<h3>個人回答を見る</h3>' +
+    '<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">回答者 ' + sortedRows.length + ' 名の全回答をスクロールで確認できます。</p>' +
+    '<button id="openAllRespondentsBtn">全員の回答を見る（' + sortedRows.length + '名）</button>';
+
+  cardsEl.appendChild(section);
+
+  document.getElementById('openAllRespondentsBtn').addEventListener('click', function() {
+    openAllRespondentsModal(sortedRows, data.headers);
+  });
+}
+
+function openAllRespondentsModal(sortedRows, headers) {
+  var bodyEl = document.getElementById('allRespondentsBody');
+  bodyEl.innerHTML = '';
+
+  sortedRows.forEach(function(row, idx) {
+    var personDiv = document.createElement('div');
+    personDiv.className = 'all-resp-person';
+
+    var headerDiv = document.createElement('div');
+    headerDiv.className = 'all-resp-person-header';
+    headerDiv.textContent = '回答 ' + (idx + 1) + '　（' + String(row[0]) + '）';
+    personDiv.appendChild(headerDiv);
+
+    for (var c = 1; c < headers.length; c++) {
+      var qaDiv = document.createElement('div');
+      qaDiv.className = 'all-resp-qa';
+      var ans = row[c] != null ? String(row[c]) : '';
+      qaDiv.innerHTML =
+        '<div class="all-resp-q">' + escapeHtml(String(headers[c])) + '</div>' +
+        '<div class="all-resp-a">' + escapeHtml(ans || '（未回答）') + '</div>';
+      personDiv.appendChild(qaDiv);
+    }
+
+    bodyEl.appendChild(personDiv);
+  });
+
+  document.getElementById('allRespondentsModal').classList.add('open');
+}
+
+function renderAiAnalysisSection() {
+  var cardsEl = document.getElementById('vizCards');
+  var existing = document.getElementById('aiAnalysisSection');
+  if (existing) existing.remove();
+
+  var section = document.createElement('div');
+  section.id = 'aiAnalysisSection';
+  section.innerHTML =
+    '<h3>🤖 AI分析</h3>' +
+    '<div class="ai-demo-notice">' +
+    '⚠️ <strong>体験デモではAI分析は利用できません。</strong><br>' +
+    'AI分析機能は、教師がGoogle Apps Scriptをデプロイしてシステムを本番環境で使用する際に利用できます。<br>' +
+    '実際の授業では、ここに質問を入力するとClaudeがデータを分析し結果を表示します。' +
+    '</div>';
+
+  cardsEl.appendChild(section);
+}
+
+function renderPieChart(canvasId, labels, counts) {
+  setTimeout(function() {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    var colors = labels.map(function(_, i) { return PIE_COLORS[i % PIE_COLORS.length]; });
+    chartInstances[canvasId] = new Chart(ctx.getContext('2d'), {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: colors,
+          borderColor: colors.map(function(c) { return c.replace('0.7', '1'); }),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 10, boxWidth: 14 } },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                var pct   = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                return ctx.label + ': ' + ctx.parsed + '件 (' + pct + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  }, 50);
+}
+
+function openRespondentModal(label, matchedRows, headers) {
+  document.getElementById('respondentModalTitle').textContent = label + '（' + matchedRows.length + '件）';
+  var listEl = document.getElementById('respondentList');
+  listEl.innerHTML = '';
+  matchedRows.forEach(function(row, idx) {
+    var item = document.createElement('div');
+    item.className = 'respondent-item';
+    var html = '<strong style="color:var(--text-muted);font-size:11px;">' + (idx + 1) + '件目</strong>';
+    for (var c = 0; c < headers.length; c++) {
+      html += '<div><span class="r-q">' + escapeHtml(String(headers[c])) + '</span><div class="r-a">' + escapeHtml(String(row[c] != null ? row[c] : '')) + '</div></div>';
+    }
+    item.innerHTML = html;
+    listEl.appendChild(item);
+  });
+  document.getElementById('respondentModal').classList.add('open');
+}
+
+function renderNumericCard(card, header, values, colIdx, rows, headers) {
+  var nums = values
+    .filter(function(v) { var s = String(v).trim(); return s !== '' && !isNaN(Number(s)); })
+    .map(Number);
+
+  if (nums.length === 0) {
+    card.innerHTML = '<h3>' + escapeHtml(String(header)) + '</h3><p style="color:var(--text-muted);font-size:14px;">回答がありません</p>';
+    return;
+  }
+
+  var sum = nums.reduce(function(a, b) { return a + b; }, 0);
+  var avg = (sum / nums.length).toFixed(1);
+  var max = Math.max.apply(null, nums);
+  var min = Math.min.apply(null, nums);
+
+  var freq = {};
+  nums.forEach(function(n) { freq[n] = (freq[n] || 0) + 1; });
+  var labels = Object.keys(freq).sort(function(a, b) { return Number(a) - Number(b); });
+  var counts = labels.map(function(l) { return freq[l]; });
+
+  var canvasId = 'chart_' + colIdx;
+
+  var breakdownHtml = '<table class="choice-table" style="margin-top:10px;">' +
+    labels.map(function(l, i) {
+      var pct = Math.round(freq[l] / nums.length * 100);
+      return '<tr class="clickable-row" data-val="' + escapeHtml(l) + '">' +
+             '<td class="ct-label">' + escapeHtml(l) + '</td>' +
+             '<td class="ct-bar"><div class="ct-fill" style="width:' + pct + '%;background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></div></td>' +
+             '<td class="ct-count">' + freq[l] + '件 (' + pct + '%)</td></tr>';
+    }).join('') + '</table>';
+
+  card.innerHTML =
+    '<h3>' + escapeHtml(String(header)) + '</h3>' +
+    '<div class="meta">回答数: ' + nums.length + '件　平均: <strong>' + avg + '</strong>　最小: ' + min + '　最大: ' + max + '</div>' +
+    '<div class="chart-container"><canvas id="' + canvasId + '"></canvas></div>' +
+    '<p style="font-size:11px;color:var(--text-muted);margin-top:6px;">値をクリックすると回答者を表示</p>' +
+    breakdownHtml;
+
+  card.querySelectorAll('.clickable-row').forEach(function(tr) {
+    tr.addEventListener('click', function() {
+      var val = tr.dataset.val;
+      var matched = rows.filter(function(row) { return String(row[colIdx]).trim() === val; });
+      openRespondentModal(header + ' = ' + val, matched, headers);
+    });
+  });
+
+  setTimeout(function() {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    chartInstances[canvasId] = new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '人数',
+          data: counts,
+          backgroundColor: 'rgba(25,118,210,0.6)',
+          borderColor:     'rgba(25,118,210,1)',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } },
+        onClick: function(evt, elements) {
+          if (elements && elements.length > 0) {
+            var idx2 = elements[0].index;
+            var val2 = labels[idx2];
+            var matched = rows.filter(function(row) { return String(row[colIdx]).trim() === val2; });
+            openRespondentModal(header + ' = ' + val2, matched, headers);
+          }
+        }
+      }
+    });
+  }, 50);
+}
+
+function renderChoiceCard(card, header, values, colIdx, rows, headers) {
+  var nonEmpty = values.filter(function(v) { return String(v).trim() !== ''; });
+  var freq = {};
+  nonEmpty.forEach(function(v) { var key = String(v).trim(); freq[key] = (freq[key] || 0) + 1; });
+  var labels = Object.keys(freq).sort(function(a, b) { return freq[b] - freq[a]; });
+  var counts = labels.map(function(l) { return freq[l]; });
+
+  var tableHtml = '<table class="choice-table">' +
+    labels.map(function(l, i) {
+      var pct = Math.round(freq[l] / nonEmpty.length * 100);
+      return '<tr class="clickable-row" data-label="' + escapeHtml(l) + '">' +
+             '<td class="ct-label">' + escapeHtml(l) + '</td>' +
+             '<td class="ct-bar"><div class="ct-fill" style="width:' + pct + '%;background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></div></td>' +
+             '<td class="ct-count">' + freq[l] + '件 (' + pct + '%)</td></tr>';
+    }).join('') + '</table>';
+
+  var canvasId = 'chart_' + colIdx;
+  card.innerHTML =
+    '<h3>' + escapeHtml(String(header)) + '</h3>' +
+    '<div class="meta">回答数: ' + nonEmpty.length + '件　選択肢: ' + labels.length + '種類　<span style="font-size:11px;color:var(--text-muted);">（行をクリックで回答者表示）</span></div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">' +
+      '<div class="chart-container" style="width:200px;height:200px;flex-shrink:0;"><canvas id="' + canvasId + '"></canvas></div>' +
+      '<div style="flex:1;min-width:160px;">' + tableHtml + '</div>' +
+    '</div>';
+
+  card.querySelectorAll('.clickable-row').forEach(function(tr) {
+    tr.addEventListener('click', function() {
+      var lbl = tr.dataset.label;
+      var matched = rows.filter(function(row) { return String(row[colIdx]).trim() === lbl; });
+      openRespondentModal(lbl, matched, headers);
+    });
+  });
+
+  renderPieChart(canvasId, labels, counts);
+}
+
+function renderMultiCard(card, header, values, colIdx, rows, headers) {
+  var freq = {};
+  var totalResponses = 0;
+
+  values.forEach(function(v) {
+    var s = String(v).trim();
+    if (!s) return;
+    totalResponses++;
+    var parts = s.split(/[,，、]/);
+    parts.forEach(function(p) { var key = p.trim(); if (key) freq[key] = (freq[key] || 0) + 1; });
+  });
+
+  var labels = Object.keys(freq).sort(function(a, b) { return freq[b] - freq[a]; });
+  var counts = labels.map(function(l) { return freq[l]; });
+
+  var tableHtml = '<table class="choice-table">' +
+    labels.map(function(l, i) {
+      var pct = Math.round(freq[l] / totalResponses * 100);
+      return '<tr class="clickable-row" data-label="' + escapeHtml(l) + '">' +
+             '<td class="ct-label">' + escapeHtml(l) + '</td>' +
+             '<td class="ct-bar"><div class="ct-fill" style="width:' + pct + '%;background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></div></td>' +
+             '<td class="ct-count">' + freq[l] + '件</td></tr>';
+    }).join('') + '</table>';
+
+  var canvasId = 'chart_' + colIdx;
+  card.innerHTML =
+    '<h3>' + escapeHtml(String(header)) + '</h3>' +
+    '<div class="meta">回答者: ' + totalResponses + '人　選択肢の延べ数: ' + counts.reduce(function(a,b){return a+b;},0) + '件（複数選択）　<span style="font-size:11px;color:var(--text-muted);">（行をクリックで回答者表示）</span></div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">' +
+      '<div class="chart-container" style="width:200px;height:200px;flex-shrink:0;"><canvas id="' + canvasId + '"></canvas></div>' +
+      '<div style="flex:1;min-width:160px;">' + tableHtml + '</div>' +
+    '</div>';
+
+  card.querySelectorAll('.clickable-row').forEach(function(tr) {
+    tr.addEventListener('click', function() {
+      var lbl = tr.dataset.label;
+      var matched = rows.filter(function(row) {
+        var s = String(row[colIdx]).trim();
+        if (!s) return false;
+        var parts = s.split(/[,，、]/);
+        return parts.some(function(p) { return p.trim() === lbl; });
+      });
+      openRespondentModal(lbl, matched, headers);
+    });
+  });
+
+  renderPieChart(canvasId, labels, counts);
+}
+
+function renderTextCard(card, header, values, colIdx, rows, headers) {
+  var nonEmpty = values
+    .filter(function(v) { return String(v).trim() !== ''; })
+    .reverse();
+
+  var listHtml = nonEmpty.map(function(v, i) {
+    return '<li class="text-list-item" style="cursor:pointer;" data-val="' + escapeHtml(String(v)) + '">' +
+      '<span class="idx">' + (i + 1) + '.</span>' + escapeHtml(String(v)) + '</li>';
+  }).join('');
+
+  card.innerHTML =
+    '<h3>' + escapeHtml(String(header)) + '</h3>' +
+    '<div class="meta">回答数: ' + nonEmpty.length + '件　<span style="font-size:11px;color:var(--text-muted);">（行をクリックで回答者表示）</span></div>' +
+    (nonEmpty.length > 0
+      ? '<ul class="text-list">' + listHtml + '</ul>'
+      : '<p style="color:var(--text-muted);font-size:14px;">回答がありません</p>');
+
+  if (rows && headers) {
+    card.querySelectorAll('.text-list-item').forEach(function(li) {
+      li.addEventListener('click', function() {
+        var val = li.dataset.val;
+        var matched = rows.filter(function(row) { return String(row[colIdx]).trim() === val.trim(); });
+        openRespondentModal(escapeHtml(String(header)), matched, headers);
+      });
+      li.addEventListener('mouseenter', function() { li.style.background = '#f0f4ff'; });
+      li.addEventListener('mouseleave', function() { li.style.background = ''; });
+    });
+  }
+}
+
+/* =============================================================
+   付箋タブ — スペース切り替え
+============================================================= */
+document.querySelectorAll('.space-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    currentSpace = btn.dataset.space;
+    document.querySelectorAll('.space-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    loadStickies();
+  });
+});
+
+/* =============================================================
+   付箋タブ — 色選択
+============================================================= */
+document.querySelectorAll('.color-dot').forEach(function(dot) {
+  dot.addEventListener('click', function() {
+    document.querySelectorAll('.color-dot').forEach(function(d) { d.classList.remove('selected'); });
+    dot.classList.add('selected');
+    selectedColor = dot.dataset.color;
+  });
+});
+
+/* =============================================================
+   付箋タブ — 付箋の読み込み・描画（メモリから）
+============================================================= */
+function loadStickies() {
+  var board = document.getElementById('stickyBoard');
+  board.innerHTML = '';
+  var stickies = demoStickies[currentSpace] || [];
+  stickies.forEach(function(sticky) { renderSticky(sticky); });
+}
+
+function renderSticky(sticky) {
+  var board = document.getElementById('stickyBoard');
+  var el    = document.createElement('div');
+  el.className = 'sticky-card ' + (sticky.color || 'yellow');
+  el.dataset.id = sticky.id;
+  el.style.left = (sticky.x || 40) + 'px';
+  el.style.top  = (sticky.y || 40) + 'px';
+
+  var isOwner = sticky.author === currentUser.displayName;
+  var shareBtn = '';
+  if (currentSpace === 'personal' && isOwner) {
+    shareBtn = '<button class="sticky-btn share-group-btn" title="班に共有">班→</button>';
+  } else if (currentSpace === 'group') {
+    shareBtn = '<button class="sticky-btn share-class-btn" title="クラスに共有">ｸﾗｽ→</button>';
+  }
+
+  var deleteBtn = isOwner
+    ? '<button class="sticky-btn delete-btn" title="削除">✕</button>'
+    : '';
+
+  var likeClass = 'sticky-btn like like-btn';
+
+  el.innerHTML =
+    '<div class="sticky-author">' + escapeHtml(sticky.author) + '</div>' +
+    '<div class="sticky-text">' + escapeHtml(sticky.text) + '</div>' +
+    '<div class="sticky-actions">' +
+      '<button class="' + likeClass + '">♥ <span class="like-count">' + (sticky.likes || 0) + '</span></button>' +
+      '<button class="sticky-btn comment-btn">💬</button>' +
+      shareBtn +
+      deleteBtn +
+    '</div>';
+
+  if (isOwner) {
+    el.addEventListener('dblclick', function(e) {
+      if (isDragging) return;
+      e.stopPropagation();
+      editStickyText(sticky, el);
+    });
+  }
+
+  el.querySelector('.like-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    // デモ用いいね（メモリ上でトグル）
+    var countEl = el.querySelector('.like-count');
+    var likedIdx = sticky.likedBy.indexOf(currentUser.displayName);
+    if (likedIdx === -1) {
+      sticky.likedBy.push(currentUser.displayName);
+      sticky.likes = (sticky.likes || 0) + 1;
+      this.classList.add('liked-active');
+    } else {
+      sticky.likedBy.splice(likedIdx, 1);
+      sticky.likes = Math.max(0, (sticky.likes || 1) - 1);
+      this.classList.remove('liked-active');
+    }
+    countEl.textContent = sticky.likes;
+  });
+
+  el.querySelector('.comment-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!isDragging) openCommentModal(sticky);
+  });
+
+  var shareGroupEl = el.querySelector('.share-group-btn');
+  if (shareGroupEl) {
+    shareGroupEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      showConfirm('この付箋を班ボードに共有しますか？（元の付箋は残ります）', function() {
+        var copy = Object.assign({}, sticky, {
+          id: genDemoId(), space: 'group',
+          x: 40 + Math.floor(Math.random() * 100),
+          y: 40 + Math.floor(Math.random() * 100),
+          comments: []
+        });
+        demoStickies.group.push(copy);
+        showToast('班ボードに共有しました！（デモのため保存されません）');
+      });
+    });
+  }
+
+  var shareClassEl = el.querySelector('.share-class-btn');
+  if (shareClassEl) {
+    shareClassEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      showConfirm('この付箋をクラスボードに共有しますか？（元の付箋は残ります）', function() {
+        var copy = Object.assign({}, sticky, {
+          id: genDemoId(), space: 'class',
+          x: 40 + Math.floor(Math.random() * 100),
+          y: 40 + Math.floor(Math.random() * 100),
+          comments: []
+        });
+        demoStickies.class.push(copy);
+        showToast('クラスボードに共有しました！（デモのため保存されません）');
+      });
+    });
+  }
+
+  var deleteEl = el.querySelector('.delete-btn');
+  if (deleteEl) {
+    deleteEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      showConfirm('この付箋を削除しますか？', function() {
+        var arr = demoStickies[currentSpace];
+        var idx = -1; for (var _i = 0; _i < arr.length; _i++) { if (arr[_i].id === sticky.id) { idx = _i; break; } }
+        if (idx !== -1) arr.splice(idx, 1);
+        el.remove();
+        showToast('付箋を削除しました（デモのため保存されません）');
+      });
+    });
+  }
+
+  setupDrag(el, sticky);
+  board.appendChild(el);
+}
+
+/* =============================================================
+   付箋 — ドラッグ実装
+============================================================= */
+function setupDrag(el, sticky) {
+  var startX, startY, startLeft, startTop;
+  var moved = false;
+
+  el.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+    if (e.button !== 0) return;
+    startX    = e.clientX;
+    startY    = e.clientY;
+    startLeft = parseInt(el.style.left) || 0;
+    startTop  = parseInt(el.style.top)  || 0;
+    moved     = false;
+    e.preventDefault();
+
+    function onMouseMove(e) {
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) { isDragging = true; moved = true; }
+      if (moved) {
+        el.style.left = Math.max(0, startLeft + dx) + 'px';
+        el.style.top  = Math.max(0, startTop  + dy) + 'px';
+      }
+    }
+    function onMouseUp() {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup',   onMouseUp);
+      if (moved) {
+        sticky.x = parseInt(el.style.left);
+        sticky.y = parseInt(el.style.top);
+      }
+      setTimeout(function() { isDragging = false; }, 10);
+    }
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup',   onMouseUp);
+  });
+
+  el.addEventListener('touchstart', function(e) {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+    var t = e.touches[0];
+    startX    = t.clientX;
+    startY    = t.clientY;
+    startLeft = parseInt(el.style.left) || 0;
+    startTop  = parseInt(el.style.top)  || 0;
+    moved = false;
+  }, { passive: true });
+
+  el.addEventListener('touchmove', function(e) {
+    var t = e.touches[0];
+    var dx = t.clientX - startX;
+    var dy = t.clientY - startY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) { isDragging = true; moved = true; }
+    if (moved) {
+      el.style.left = Math.max(0, startLeft + dx) + 'px';
+      el.style.top  = Math.max(0, startTop  + dy) + 'px';
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchend', function() {
+    if (moved) {
+      sticky.x = parseInt(el.style.left);
+      sticky.y = parseInt(el.style.top);
+    }
+    setTimeout(function() { isDragging = false; }, 10);
+  });
+}
+
+/* =============================================================
+   付箋 — 新規作成
+============================================================= */
+document.getElementById('addStickyBtn').addEventListener('click', function() {
+  var wrap = document.getElementById('boardWrap');
+  var x = wrap.scrollLeft + 60 + Math.floor(Math.random() * 80);
+  var y = wrap.scrollTop  + 60 + Math.floor(Math.random() * 80);
+
+  var newSticky = {
+    id: genDemoId(),
+    text: '（ここをダブルクリックして編集）',
+    color: selectedColor,
+    author: currentUser.displayName,
+    likes: 0,
+    likedBy: [],
+    x: x,
+    y: y,
+    space: currentSpace,
+    comments: []
+  };
+
+  demoStickies[currentSpace].push(newSticky);
+  renderSticky(newSticky);
+  showToast('付箋を追加しました（デモのため保存されません）');
+});
+
+/* =============================================================
+   付箋 — テキスト編集（インライン）
+============================================================= */
+function editStickyText(sticky, el) {
+  var textEl = el.querySelector('.sticky-text');
+  var current = textEl.textContent;
+
+  var ta = document.createElement('textarea');
+  ta.value = current;
+  ta.style.cssText = 'width:100%;height:80px;resize:vertical;font-size:13px;padding:4px;border-radius:4px;border:1.5px solid var(--primary);';
+
+  textEl.replaceWith(ta);
+  ta.focus();
+  ta.select();
+
+  function save() {
+    var newText = ta.value.trim() || current;
+    var newTextEl = document.createElement('div');
+    newTextEl.className = 'sticky-text';
+    newTextEl.textContent = newText;
+    ta.replaceWith(newTextEl);
+    sticky.text = newText;
+  }
+
+  ta.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      save();
+    } else if (e.key === 'Escape') {
+      var orig = document.createElement('div');
+      orig.className = 'sticky-text';
+      orig.textContent = current;
+      ta.replaceWith(orig);
+    }
+  });
+  ta.addEventListener('blur', save);
+}
+
+/* =============================================================
+   コメントモーダル（メモリ上のデモデータ）
+============================================================= */
+var currentStickyObj = null;
+
+document.getElementById('closeCommentBtn').addEventListener('click', closeCommentModal);
+document.getElementById('commentModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCommentModal();
+});
+
+function openCommentModal(sticky) {
+  currentStickyObj = sticky;
+  document.getElementById('commentModal').classList.add('open');
+  var listEl = document.getElementById('commentList');
+  listEl.innerHTML = '';
+
+  var comments = sticky.comments || [];
+  if (comments.length === 0) {
+    listEl.innerHTML = '<p class="comment-empty">まだコメントはありません</p>';
+  } else {
+    comments.forEach(function(c) { appendComment(c, sticky); });
+  }
+}
+
+function closeCommentModal() {
+  document.getElementById('commentModal').classList.remove('open');
+  currentStickyObj = null;
+}
+
+document.getElementById('sendCommentBtn').addEventListener('click', function() {
+  var text = document.getElementById('newCommentText').value.trim();
+  if (!text) { showToast('コメントを入力してください', true); return; }
+  if (!currentStickyObj) return;
+
+  var comment = {
+    id: genDemoId(),
+    author: currentUser.displayName,
+    text: text,
+    createdAt: nowStr()
+  };
+
+  if (!currentStickyObj.comments) currentStickyObj.comments = [];
+  currentStickyObj.comments.push(comment);
+  document.getElementById('newCommentText').value = '';
+  appendComment(comment, currentStickyObj);
+  showToast('コメントを送信しました（デモのため保存されません）');
+});
+
+function appendComment(comment, sticky) {
+  var listEl = document.getElementById('commentList');
+  var emptyEl = listEl.querySelector('.comment-empty');
+  if (emptyEl) emptyEl.remove();
+
+  var item = document.createElement('div');
+  item.className = 'comment-item';
+
+  var deleteBtn = comment.author === currentUser.displayName
+    ? '<button class="c-delete-btn" title="削除">削除</button>'
+    : '';
+
+  item.innerHTML =
+    deleteBtn +
+    '<span class="c-author">' + escapeHtml(comment.author) + '</span>' +
+    '<span class="c-time">'   + escapeHtml(comment.createdAt) + '</span>' +
+    '<div class="c-text">'    + escapeHtml(comment.text) + '</div>';
+
+  var delEl = item.querySelector('.c-delete-btn');
+  if (delEl) {
+    delEl.addEventListener('click', function() {
+      showConfirm('このコメントを削除しますか？', function() {
+        var arr = sticky.comments;
+        var idx = -1; for (var _ci = 0; _ci < arr.length; _ci++) { if (arr[_ci].id === comment.id) { idx = _ci; break; } }
+        if (idx !== -1) arr.splice(idx, 1);
+        item.remove();
+        if (!listEl.querySelector('.comment-item')) {
+          listEl.innerHTML = '<p class="comment-empty">まだコメントはありません</p>';
+        }
+        showToast('コメントを削除しました');
+      });
+    });
+  }
+
+  listEl.appendChild(item);
+  listEl.scrollTop = listEl.scrollHeight;
+}
+</script>
+</body>
+</html>
