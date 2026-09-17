@@ -299,6 +299,7 @@
     .feat-icon.amber  { background: linear-gradient(135deg, #fef3c7, #fde68a); }
     .feat-icon.rose   { background: linear-gradient(135deg, #ffe4e6, #fecdd3); }
     .feat-icon.green  { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
+    .feat-icon.indigo { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
     .feat-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
     .feat-desc  { font-size: 13px; color: var(--text-muted); line-height: 1.65; }
 
@@ -592,8 +593,8 @@
       <div style="color:#fff;font-size:22px;font-weight:900;margin-bottom:10px;line-height:1.3;">さわってみる（体験デモ）</div>
       <div style="color:rgba(255,255,255,0.85);font-size:13px;line-height:1.9;margin-bottom:20px;">
         ログイン不要・スプレッドシート不要。<br>
-        サンプルデータで<strong style="color:#fff;">可視化グラフ</strong>と<strong style="color:#fff;">付箋ボード</strong>を体験できます。<br>
-        <span style="opacity:0.8;font-size:12px;">AI分析は本番環境のみ利用可。データは保存されません。</span>
+        サンプルデータで<strong style="color:#fff;">可視化グラフ</strong>・<strong style="color:#fff;">付箋ボード</strong>・<strong style="color:#fff;">プログラムの構想</strong>を体験できます。<br>
+        <span style="opacity:0.8;font-size:12px;">AI分析・ペルソナとの自由記述チャットは本番環境のみ利用可。データは保存されません。</span>
       </div>
       <a href="demo.html" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:10px;background:#fff;color:#4f80ff;font-weight:800;font-size:15px;padding:13px 28px;border-radius:50px;text-decoration:none;box-shadow:0 4px 16px rgba(0,0,0,0.18);transition:transform 0.15s,box-shadow 0.15s;"
@@ -604,8 +605,9 @@
     </div>
     <div style="background:rgba(255,255,255,0.13);border:1.5px solid rgba(255,255,255,0.28);border-radius:14px;padding:18px 22px;font-size:12.5px;color:rgba(255,255,255,0.92);line-height:2.1;flex-shrink:0;">
       <div>📊 <strong style="color:#fff;">可視化グラフ</strong>：棒・折れ線・円グラフ</div>
-      <div>🗒️ <strong style="color:#fff;">付箋ボード</strong>：個人 / 班 / クラス</div>
-      <div>💬 <strong style="color:#fff;">コメント</strong>：付箋に追記・削除</div>
+      <div>🗒️ <strong style="color:#fff;">付箋ボード</strong>：個人 / 班 / クラス（コメントのやり取り付き）</div>
+      <div>📝 <strong style="color:#fff;">プログラムの構想</strong>：ペルソナ→課題→技術→流れ図</div>
+      <div>💬 <strong style="color:#fff;">ペルソナ会話</strong>：質問ボタン＋自由記述欄あり（AI応答は本番のみ）</div>
       <div>👍 <strong style="color:#fff;">いいね・共有</strong>：班→クラスへ</div>
       <div>🔍 <strong style="color:#fff;">個人回答表示</strong>：クリックで詳細</div>
     </div>
@@ -639,14 +641,14 @@
         <span class="toc-num">03</span>
         <div>
           <a href="#student">生徒ページの使い方</a>
-          <span class="toc-sub">ログイン / データ入力 / 付箋ボード / AI分析</span>
+          <span class="toc-sub">ログイン / データ入力 / 付箋ボード / AI分析 / プログラムの構想</span>
         </div>
       </li>
       <li>
         <span class="toc-num">04</span>
         <div>
           <a href="#teacher">教師ダッシュボードの使い方</a>
-          <span class="toc-sub">生徒一覧・アラート / 付箋ボード / 設定</span>
+          <span class="toc-sub">生徒一覧・アラート / 付箋ボード / 設定 / プログラムの構想 進捗</span>
         </div>
       </li>
       <li>
@@ -665,7 +667,7 @@
         <span class="toc-num">08</span>
         <div>
           <a href="#trydemo">さわってみる（体験デモ）</a>
-          <span class="toc-sub">サンプルデータで可視化・付箋ボードを体験</span>
+          <span class="toc-sub">サンプルデータで可視化・付箋ボード・プログラムの構想を体験</span>
         </div>
       </li>
     </ol>
@@ -716,6 +718,11 @@
         <div class="feat-title">コメント機能</div>
         <div class="feat-desc">他の生徒の付箋にコメントを残せます。クラス全体の思考を深める対話が生まれます。</div>
       </div>
+      <div class="feat-card">
+        <div class="feat-icon indigo">📝</div>
+        <div class="feat-title">プログラムの構想</div>
+        <div class="feat-desc">ペルソナ選び→課題文づくり→技術選択→ドラッグでつなぐ流れ図まで、課題設定からプログラムの設計までを1つのツールで行えます。</div>
+      </div>
     </div>
 
     <h3><span class="tag">FLOW</span>授業の流れとシステムの対応関係</h3>
@@ -760,7 +767,7 @@
           <div class="step-title">配布スプレッドシートをマイドライブにコピーする</div>
           <div class="step-desc">下のリンクを開くと、必要なシート構成が揃ったスプレッドシートを自分のGoogleドライブにコピーできます。ファイル名は任意で変更してください。</div>
           <div class="step-desc" style="margin-top:8px;">
-            <a href="https://docs.google.com/spreadsheets/d/1KJrfHOJpRmi9AxNPHCDf3wCKV9wd4Te2gNw-iDz3Uvc/copy"
+            <a href="https://docs.google.com/spreadsheets/d/1VpPsGh9kPCus26xdQswX0n7JW6yTP3g-JmTsEvxYTkM/copy"
                target="_blank"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#4f80ff,#6366f1);color:#fff;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;text-decoration:none;">
               📋 スプレッドシートをコピーする
@@ -992,6 +999,48 @@
         </div>
       </div>
     </div>
+
+    <h3><span class="tag rose">DESIGN</span>プログラムの構想（課題設定〜流れ図づくり）</h3>
+    <p>ボード画面のヘッダーにある<strong>「📋 プログラムの構想へ進む →」</strong>ボタンから開く、独立したページです。ペルソナの困りごとをもとに、課題文づくりから技術選択・プログラムの流れ図（フローチャート）作成までを4つのステップで進めます。</p>
+
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Step 1：ペルソナを確認する</div>
+          <div class="step-desc">教師が「ペルソナ」タブで用意した人物一覧から選ぶか、直接名前と困りごとを入力します。「この人のためにどんなことをしてあげたい？」を書いて次へ進みます。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Step 2：課題を1文にする</div>
+          <div class="step-desc">「〇〇が　△△できるように、チャッピーが　□□する」という穴埋め（クローズ）形式で、課題を1つの文章にまとめます。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Step 3：技術を選ぶ・つなげる</div>
+          <div class="step-desc">「感じる（入力）」「考える（処理）」「動かす・知らせる（出力）」の3列からチップを選び、④つなげる欄でチップどうしをドラッグして矢印でつなぎます。「考える（ひし形）」には「はい」（実線）「いいえ」（点線）の2つの丸があり、線をつなぐと丸の位置も実際につながった場所へ自動で移動します。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Step 4：まとめ・保存</div>
+          <div class="step-desc">ペルソナ・課題文・選んだ技術・完成した流れ図が一覧表示されます。「保存する」を押すとスプレッドシートの「構想」シートに保存され、次回アクセス時に続きから確認・編集できます。</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">ペルソナ一覧は教師が用意します</div>
+        <p>Step 1の「👥 ペルソナ一覧からえらぶ」は、教師ダッシュボードの「ペルソナ」タブで作成・インポートした人物データを表示します。ここで人物と少し会話してから「このペルソナで課題を考える」を選ぶと、Step 1に自動で反映されます。</p>
+      </div>
+    </div>
   </div>
 
   <!-- ============================================================
@@ -1094,6 +1143,21 @@
         </div>
       </div>
     </div>
+
+    <h3><span class="tag rose">TAB 4</span>プログラムの構想 進捗</h3>
+    <p>生徒が「プログラムの構想」ページで作った内容の進み具合を、クラス全員分まとめて確認できるタブです。「最新の状況を読み込む」ボタンを押すと一覧が更新されます。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>列</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td><strong>ペルソナ</strong></td><td>Step 1で選んだ・入力した人物名</td></tr>
+          <tr><td><strong>課題文</strong></td><td>Step 2の課題文が完成しているか（✓ / —）</td></tr>
+          <tr><td><strong>感じる・考える・動かす</strong></td><td>Step 3で選んだチップの数</td></tr>
+          <tr><td><strong>つなげた矢印</strong></td><td>④つなげるで作った矢印（実線・点線）の本数</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>「詳細」ボタンを押すと、その生徒が実際につないだ流れ図（ひし形・矢印込み）を読み取り専用で確認できるモーダルが開きます。</p>
   </div>
 
   <!-- ============================================================
@@ -1118,6 +1182,7 @@
           <tr><td><strong>付箋データ</strong></td><td>全付箋の内容・スペース・投稿者・位置情報</td><td>システム自動</td></tr>
           <tr><td><strong>コメントデータ</strong></td><td>付箋へのコメント一覧</td><td>システム自動</td></tr>
           <tr><td><strong>アラートキャッシュ</strong></td><td>AI分析結果のキャッシュ（要配慮/問題なし・分析日時）</td><td>システム自動</td></tr>
+          <tr><td><strong>構想</strong></td><td>生徒ごとの「プログラムの構想」保存データ（ペルソナ・課題文・技術選択・流れ図の矢印）</td><td>システム自動</td></tr>
           <tr><td><strong>プロンプト</strong></td><td>AIへの指示文（教師が内容を変更可能）</td><td>システム自動作成・教師編集可</td></tr>
           <tr><td><strong>ひながた</strong></td><td>個人シートのテンプレート</td><td>教師が事前準備</td></tr>
           <tr><td><strong>（生徒名）</strong></td><td>各生徒のAI質問記録。生徒ごとに自動作成</td><td>システム自動</td></tr>
@@ -1285,6 +1350,15 @@
       <div class="callout-body">
         <div class="callout-title">再デプロイが必要です</div>
         <p>GAS のコードを変更した後は「デプロイ」→「デプロイを管理」→「編集（鉛筆アイコン）」→「バージョン：新しいバージョン」で保存してください。</p>
+      </div>
+    </div>
+
+    <h3><span class="tag rose">Q</span>「プログラムの構想」の保存データはどこで確認できますか？</h3>
+    <div class="callout info">
+      <div class="callout-ico">ℹ️</div>
+      <div class="callout-body">
+        <div class="callout-title">スプレッドシートの「構想」シート</div>
+        <p>生徒が「プログラムの構想」ページで保存すると、スプレッドシートに自動作成される「構想」シートに、生徒ごとの内容（ペルソナ・課題文・技術・流れ図）が1行で保存されます。教師ダッシュボードの「プログラムの構想 進捗」タブからも一覧・詳細を確認できます。</p>
       </div>
     </div>
 
